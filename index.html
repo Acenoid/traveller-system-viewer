@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Traveller System Viewer v5</title>
+  <title>Traveller System Viewer v6</title>
   <style>
     :root{
       --bg:#05070c; --panel:#07111d; --panel2:#0b1728; --text:#eef5ff; --muted:#9db0c9;
@@ -28,11 +28,9 @@
     .field input{width:100%}
     .sectorField{grid-column:1}
     .hexField{grid-column:2}
-    .seedField{grid-column:3}
-    .loaderStatus{grid-column:1 / -1;margin-top:2px}
     .seedField{grid-column:1 / span 2}
+    .loaderStatus{grid-column:1 / -1;margin-top:2px}
     .seedButtons{display:flex;gap:10px;align-items:end}.seedButtons button{width:100%}
-
 
     .main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:10px;padding:10px}
     .left{min-width:0}
@@ -61,11 +59,9 @@
     .side dl{margin:0}
     .side dt{color:var(--muted);font-size:12px;margin-top:12px}
     .side dd{margin:3px 0 0;font-size:14px}
-    
     .uwpTable{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
     .uwpTable td{border:1px solid #1d3556;padding:4px 6px;vertical-align:top}
     .uwpTable td:first-child{background:#0b1728;color:#d5e6ff;width:34%}
-
     .mapLink{display:block;text-align:center;text-decoration:none;color:#eef5ff;background:linear-gradient(#1b5a99,#103962);border:1px solid #4da3ff;border-radius:8px;padding:10px 12px;margin-top:14px;font-weight:700}
     .results{max-height:220px;overflow:auto}
     .result{border:1px solid var(--line);border-radius:9px;padding:8px;margin:7px 0;background:#07111d;cursor:pointer}
@@ -88,11 +84,8 @@
     .highportIcon{fill:#d9f0ff;font-size:14px;font-weight:900;filter:drop-shadow(0 0 5px #63b7ff)}
     .mainHalo{fill:none;stroke:#e8f4ff;stroke-width:2.2;filter:drop-shadow(0 0 8px #61b7ff)}
     .glow{filter:drop-shadow(0 0 8px rgba(100,170,255,.75))}
-    .surfaceBlob{opacity:.38}
-    .cloudBlob{opacity:.22;fill:#ffffff}
-    .gasBand{opacity:.35;stroke:#fff4d0;stroke-width:2.4;fill:none}
-    .nightShade{opacity:.22;fill:#000000}
     .starGlow{filter:drop-shadow(0 0 25px rgba(255,78,55,.9))}
+    .assetImage{image-rendering:auto}
     @media(max-width:1100px){
       .main{grid-template-columns:1fr}
       .loader{display:grid;grid-template-columns:minmax(320px,1fr) 110px 110px;gap:12px;align-items:end;padding:12px 18px;border-bottom:1px solid var(--line);background:rgba(5,13,24,.8)}
@@ -108,7 +101,7 @@
     <header>
       <div>
         <h1 id="title">Traveller System Viewer</h1>
-        <div class="sub" id="subtitle">Traveller Map API plus procedural system expansion</div>
+        <div class="sub" id="subtitle">Traveller Map API plus image-based system expansion</div>
       </div>
       <div class="controls">
         <button class="smallBtn active" id="showCinematic">Cinematic View</button>
@@ -126,14 +119,11 @@
         <input id="sector" value="Solomani Rim" placeholder="Start typing a sector..." list="sectorList" autocomplete="off">
         <datalist id="sectorList"></datalist>
       </div>
-
       <div class="field hexField">
         <label>Hex</label>
         <input id="hex" value="0233" placeholder="0233">
       </div>
-
       <button id="loadBtn">Load</button>
-
       <div class="field seedField">
         <label>Name Seed</label>
         <input id="nameSeed" value="campaign-alpha-7" placeholder="shared procedural naming seed">
@@ -141,15 +131,11 @@
           Players using the same seed will generate identical planet and moon names.
         </div>
       </div>
-
       <div class="seedButtons">
         <button id="applySeed">Apply Seed</button>
       </div>
-
-      <div id="status" class="muted loaderStatus">
-        Example: Solomani Rim / 0233 for Jardin.
-      </div>
-    </div></div>
+      <div id="status" class="muted loaderStatus">Example: Solomani Rim / 0233 for Jardin.</div>
+    </div>
 
     <div class="main">
       <div class="left">
@@ -183,9 +169,10 @@
       <div class="side">
         <div class="panel">
           <h2>World Summary</h2>
-          <dl id="summary"></dl><a id="mapLink" class="mapLink" href="#" target="_blank" rel="noopener">View on Traveller Map</a>
+          <dl id="summary"></dl>
+          <a id="mapLink" class="mapLink" href="#" target="_blank" rel="noopener">View on Traveller Map</a>
         </div>
-        
+
         <details class="panel">
           <summary style="cursor:pointer;font-weight:750;color:#4da3ff;padding:14px">Generated Data</summary>
           <pre id="jsonOut">{}</pre>
@@ -197,11 +184,51 @@
 
 <script>
 const API = "https://travellermap.com";
+const PLANET_ASSET_PATH = "./planet/";
+const STAR_ASSET_PATH = "./stars/";
+
+const PLANET_FILES = {
+  ammonia: "ammonia.png",
+  ash: "ash.png",
+  asteroid: "asteroid.png",
+  barren: "barren.png",
+  chthonian: "chthonian.png",
+  corrosive: "corrosive.png",
+  crystal: "crystal.png",
+  desert: "desert.png",
+  exoit: "exoit.png",
+  garden: "garden.png",
+  gas_giant: "gas_giant.png",
+  hot_gas_giant: "hot_gas_giant.png",
+  ice: "ice.png",
+  ice_ocean: "ice_ocean.png",
+  industrial: "industrial.png",
+  methane: "methane.png",
+  oceanic: "oceanic.png",
+  ringed_gas_giant: "ringed_gas_giant.png",
+  rocky: "rocky.png",
+  toxic: "toxic.png",
+  urban: "urban.png",
+  vacuum: "vacuum.png",
+  volcanic: "volcanic.png"
+};
+
+const STAR_FILES = {
+  O: "O.jpg",
+  B: "B.jpg",
+  A: "A.jpg",
+  F: "F.jpg",
+  G: "G.jpg",
+  K: "K.jpg",
+  M: "M.jpg",
+  default: "G.jpg"
+};
+
+const opts = { labels:true, moons:true, orbits:true, belts:true };
 let currentSystem = null;
 let nameSalt = 0;
 let activeView = "cinematic";
 let zoom = 1;
-const opts = { labels:true, moons:true, orbits:true, belts:true };
 
 const $ = id => document.getElementById(id);
 $("loadBtn").onclick = () => fetchWorldBySectorHex($("sector").value.trim(), $("hex").value.trim());
@@ -214,7 +241,6 @@ $("applySeed").onclick = () => {
     renderAll();
   }
 };
-
 $("showCinematic").onclick = () => setView("cinematic");
 $("showOrbital").onclick = () => setView("orbital");
 $("fitSystem").onclick = () => { zoom=1; $("zoomRange").value=1; renderAll(); };
@@ -236,7 +262,6 @@ function setView(view){
   $("showOrbital").classList.toggle("active", view==="orbital");
   renderAll();
 }
-
 function status(msg){ $("status").textContent = msg || ""; }
 
 async function apiJson(url){
@@ -259,7 +284,6 @@ function jsonp(url, cb="tm_cb_"+Math.random().toString(36).slice(2)){
   });
 }
 
-
 async function loadSectorList(){
   const dl = $("sectorList");
   const fallback = [
@@ -270,14 +294,11 @@ async function loadSectorList(){
     "Reaver's Deep","Reft","Riftspan Reaches","Spinward Marches","Solomani Rim",
     "Trojan Reach","Vanguard Reaches","Verge","Vland","Zarushagar"
   ];
-
   function setOptions(names){
     const clean = [...new Set(names.filter(Boolean).map(s => String(s).replace(/ Sector$/,"").trim()))].sort((a,b)=>a.localeCompare(b));
     dl.innerHTML = clean.map(s => `<option value="${esc(s)}"></option>`).join("");
   }
-
   try{
-    // Traveller Map exposes the sector catalog here. It is better than hardcoding wiki pages.
     const data = await apiJson(`${API}/api/universe`);
     const sectors = data.Sectors || data.sectors || data.Items || data.items || [];
     const names = sectors.map(s => {
@@ -287,9 +308,7 @@ async function loadSectorList(){
     });
     if(names.length) setOptions(names);
     else setOptions(fallback);
-  }catch(e){
-    setOptions(fallback);
-  }
+  }catch(e){ setOptions(fallback); }
 }
 
 async function fetchWorldBySectorHex(sector,hex){
@@ -307,7 +326,6 @@ async function fetchWorldBySectorHex(sector,hex){
     renderAll();
   }catch(err){ status(err.message); }
 }
-
 function normalizeWorlds(data){
   if(!data) return [];
   if(Array.isArray(data.Worlds)) return data.Worlds;
@@ -316,42 +334,8 @@ function normalizeWorlds(data){
   if(data.Results && Array.isArray(data.Results.Items)) return data.Results.Items;
   return [];
 }
-function normalizeSearchItems(data){
-  const r=data?.Results || data?.results || data;
-  if(Array.isArray(r)) return r;
-  if(Array.isArray(r?.Items)) return r.Items;
-  if(r?.Items && typeof r.Items==="object") return Object.values(r.Items);
-  return [];
-}
-function extractResultInfo(item){
-  const flat=JSON.stringify(item);
-  let name=item.Name||item.name||item.Label||item.label||item.Title||item.title||item.WorldName||"";
-  let sector=extractSector(item), hex=extractHex(item), uwp=item.UWP||item.uwp||"";
-
-  // Search result URLs often carry the real location.
-  const go=flat.match(/\/go\/([^"?#]+)\/(\d{4})/i) || flat.match(/sector=([^"&]+).*?hex=(\d{4})/i);
-  if(go){
-    sector=sector||decodeURIComponent(go[1]).replace(/\+/g," ");
-    hex=hex||go[2];
-  }
-
-  // Some result payloads carry a combined location string.
-  const loc = flat.match(/([A-Za-z][A-Za-z0-9 '.()-]{2,})\s+(\d{4})/);
-  if(!hex && loc) hex = loc[2];
-
-  // Prefer a plausible display name from common fields, but strip tags if needed.
-  if(!name){
-    const m=flat.match(/"Name"\s*:\s*"([^"]+)"/i) || flat.match(/"Label"\s*:\s*"([^"]+)"/i);
-    name=m?m[1]:"Unnamed";
-  }
-  name=String(name).replace(/<[^>]+>/g,"").trim();
-
-  return {name,sector,hex,uwp};
-}
-
 function extractSector(item){ return item?.Sector || item?.sector || item?.SectorName || item?.SectorAbbreviation || item?.Location?.Sector || ""; }
 function extractHex(item){ return item?.Hex || item?.hex || item?.Location?.Hex || ""; }
-
 function makeSeed(world){
   const userSeed = ($("nameSeed")?.value || "default").trim() || "default";
   return `${userSeed}|${world.Name||""}|${world.Sector||""}|${world.Hex||""}|${world.Allegiance||""}|${nameSalt}`;
@@ -381,19 +365,21 @@ function generateSystem(world){
   let orbit=star.spectralClass==="M"?.08:.18;
   const rockyCount=Math.max(1,Math.min(otherWorlds,Math.round(otherWorlds*.45)));
 
-  for(let i=0;i<rockyCount;i++){ sys.bodies.push(makeBody("rocky",orbit,5+(i%4),rand)); orbit += star.spectralClass==="M"?.10+i*.02:.18+i*.03; }
-  for(let i=0;i<belts;i++){ sys.bodies.push(makeBody("belt",orbit,4,rand)); orbit+=.22; }
+  for(let i=0;i<rockyCount;i++){ sys.bodies.push(makeVariedTerrestrial(orbit,5+(i%4),rand,false)); orbit += star.spectralClass==="M"?.10+i*.02:.18+i*.03; }
+  for(let i=0;i<belts;i++){ sys.bodies.push(makeBody("asteroid","belt",orbit,4,rand)); orbit+=.22; }
   for(let i=0;i<gasGiants;i++){
-    const b=makeBody("gas giant",orbit,18+(i%3)*3,rand);
+    const kind = pick(["gas_giant","ringed_gas_giant","hot_gas_giant"],rand);
+    const b=makeBody(kind,"gas giant",orbit,18+(i%3)*3,rand);
     const moonCount=2+((i+uwp.size+uwp.pop)%5);
-    for(let m=0;m<moonCount;m++) b.moons.push({name:"",type:"moon",size:3+(m%3),color:m%2?"#b6a481":"#9aa8bd"});
+    for(let m=0;m<moonCount;m++) b.moons.push(makeMoon(rand,m));
     sys.bodies.push(b);
     orbit+=.36+i*.08;
   }
   let made=rockyCount;
-  while(made<otherWorlds){ sys.bodies.push(makeBody("ice/rock",orbit,6+(made%4),rand)); orbit+=.25+made*.03; made++; }
+  while(made<otherWorlds){ sys.bodies.push(makeVariedTerrestrial(orbit,6+(made%4),rand,true)); orbit+=.25+made*.03; made++; }
 
-  const mainworld={name:mainName,type:classifyMainworld(uwp,remarks),uwp:world.UWP||"",remarks,size:Math.max(18,Math.min(34,uwp.size*3+10)),atmosphere:uwp.atm,hydrographics:uwp.hydro,populationExponent:uwp.pop,techLevel:uwp.tl,isMainworld:true,color:colorForMainworld(uwp,remarks),moons:[]};
+  const mainType=classifyMainworld(uwp,remarks);
+  const mainworld={name:mainName,type:mainType,asset:mainType,uwp:world.UWP||"",remarks,size:Math.max(18,Math.min(34,uwp.size*3+10)),atmosphere:uwp.atm,hydrographics:uwp.hydro,populationExponent:uwp.pop,techLevel:uwp.tl,isMainworld:true,moons:[]};
   const isSatellite=/\bSa\b/.test(remarks);
   if(isSatellite && sys.bodies.some(b=>b.type==="gas giant")){
     const host=sys.bodies.find(b=>b.type==="gas giant");
@@ -408,13 +394,40 @@ function generateSystem(world){
   sys.counts.generatedBodies=sys.bodies.length;
   return sys;
 }
-function makeBody(type,orbit,size,rand){
-  const color = type==="gas giant" ? pick(["#d88f3d","#74afd2","#c09a52","#d4c65e"],rand)
-    : type==="ice/rock" ? pick(["#c6e1f2","#aebfd0","#d6e9f4"],rand)
-    : type==="belt" ? "#9aa8bd"
-    : pick(["#8c929f","#b87943","#4f8dd6","#6c8c6d","#a89465"],rand);
-  return {name:"",type,orbit:Number(orbit.toFixed(2)),size,moons:[],color,rings:type==="gas giant"&&rand()>.45};
+function makeVariedTerrestrial(orbit,size,rand,outer){
+  const pool = outer
+    ? ["ice","ice_ocean","methane","ammonia","barren","vacuum","rocky","crystal","exoit"]
+    : ["chthonian","volcanic","ash","vacuum","rocky","barren","desert","toxic","corrosive","garden","oceanic"];
+  return makeBody(pick(pool,rand),"world",orbit,size,rand);
 }
+function makeMoon(rand,m){
+  const pool=["ice","barren","vacuum","rocky","methane","ash","crystal"];
+  const asset=pick(pool,rand);
+  return {name:"",type:"moon",asset,size:3+(m%3),moons:[]};
+}
+function makeBody(asset,type,orbit,size,rand){
+  return {name:"",type,asset,orbit:Number(orbit.toFixed(2)),size,moons:[],rings:asset==="ringed_gas_giant"};
+}
+
+function classifyMainworld(uwp,remarks){
+  if(/\bIn\b/.test(remarks)) return "industrial";
+  if(/\bHi\b/.test(remarks) && uwp.pop>=9) return "urban";
+  if(/\bFl\b/.test(remarks)) return "exoit";
+  if(/\bIc\b/.test(remarks)) return "ice";
+  if(/\bOc\b|\bWa\b/.test(remarks)) return uwp.atm<=3 ? "ice_ocean" : "oceanic";
+  if(/\bAg\b|\bGa\b/.test(remarks)) return "garden";
+  if(/\bBa\b|\bDi\b/.test(remarks)) return uwp.atm<=1 ? "vacuum" : "barren";
+  if(uwp.atm===0 || uwp.atm===1) return "vacuum";
+  if(uwp.atm>=13) return "toxic";
+  if(uwp.atm===11 || uwp.atm===12) return "corrosive";
+  if(uwp.atm===10) return "exoit";
+  if(uwp.hydro===0 && uwp.atm<=3) return "barren";
+  if(uwp.hydro<=2 && uwp.atm>=4) return "desert";
+  if(uwp.hydro>=9) return "oceanic";
+  if(uwp.atm>=4 && uwp.atm<=9 && uwp.hydro>=3 && uwp.hydro<=8) return "garden";
+  return "rocky";
+}
+
 function assignNames(sys){
   const rand=mulberry32(hashString(sys.seed+"|names|"+nameSalt));
   const culture=cultureFromAllegiance(sys.world.allegiance);
@@ -460,746 +473,232 @@ function hasHighport(system){
   return u.starport === "A" || u.starport === "B";
 }
 function drawHighport(svg,x,y,r){
-  // Small orbital station / highport marker. Not a moon.
   const hx = x + r + 18;
   const hy = y - r - 12;
   addCircle(svg,hx,hy,7,"#d9f0ff","glow");
   addText(svg,hx,hy+4,"◆","highportIcon",13,"middle");
-  addText(svg,hx+12,hy+4,"Highport","baseText",10);
+}
+function drawCinematic(){
+  const svg=$("cinematicSvg");
+  clear(svg); addDefs(svg); addRect(svg,0,0,1600,420,"#000");
+  drawStars(svg,1600,420,hashString(currentSystem.seed+"stars"));
+  drawStarAsset(svg,155,210,currentSystem.star,150);
+  addText(svg,155,315,starName(currentSystem.star),"bigLabel",24,"middle");
+  addText(svg,155,342,currentSystem.star.raw,"smallLabel",12,"middle");
+
+  const bodyList = currentSystem.bodies.slice(0,9);
+  const startX=360, gap=120;
+  bodyList.forEach((b,i)=>{
+    const x=startX+i*gap, y=195;
+    const r = b.type==="gas giant" ? 47 : b.isMainworld ? 42 : Math.max(24, b.size+17);
+    drawBodyAsset(svg,b,x,y,r);
+    if(b.isMainworld) {
+      addCircle(svg,x,y,r+5,"none","mainHalo");
+      if(hasHighport(currentSystem)) drawHighport(svg,x,y,r);
+    }
+    addText(svg,x,y+r+28,b.name,"label",13,"middle");
+    addText(svg,x,y+r+45,labelForAsset(b.asset || b.type),"typeLabel",12,"middle");
+  });
+}
+function drawOrbital(){
+  const svg=$("orbitalSvg");
+  clear(svg); addDefs(svg); addRect(svg,0,0,1800,1100,"#000");
+  drawStars(svg,1800,1100,hashString(currentSystem.seed+"orbital-stars"));
+  const W=1800,H=1100,cx=900,cy=550;
+  const starR=Math.max(44,currentSystem.star.radius*.8);
+  drawStarAsset(svg,cx,cy,currentSystem.star,starR*2);
+  if(opts.labels) addText(svg,cx,cy+starR+22,starName(currentSystem.star),"label",13,"middle");
+
+  const maxOrbit=Math.max(...currentSystem.bodies.map(b=>b.orbit||0),1);
+  const scale=(420/maxOrbit)*zoom;
+  currentSystem.bodies.forEach((b,idx)=>{
+    if(b.type==="belt" && !opts.belts) return;
+    const orbitR=(b.orbit||.1)*scale + 55;
+    if(opts.orbits) addCircle(svg,cx,cy,orbitR,"none","orbit");
+    const angle=(hashString(currentSystem.seed+b.name)%360)*Math.PI/180;
+    const x=cx+Math.cos(angle)*orbitR;
+    const y=cy+Math.sin(angle)*orbitR*.62;
+    const r=b.type==="gas giant"?36:b.type==="belt"?23:b.isMainworld?31:Math.max(18,b.size+12);
+    drawBodyAsset(svg,b,x,y,r);
+    if(b.isMainworld){
+      addCircle(svg,x,y,r+4,"none","mainHalo");
+      if(hasHighport(currentSystem)) drawHighport(svg,x,y,r);
+    }
+    if(opts.labels){
+      addText(svg,x,y+r+17,b.name,"label",12,"middle");
+      addText(svg,x,y+r+31,labelForAsset(b.asset || b.type),"smallLabel",10,"middle");
+    }
+    if(opts.moons && b.moons && b.moons.length){
+      const moonBase=r+18;
+      b.moons.forEach((m,mi)=>{
+        const ma=(mi/b.moons.length)*Math.PI*2+.5;
+        const mx=x+Math.cos(ma)*(moonBase+mi*3);
+        const my=y+Math.sin(ma)*(moonBase+mi*3)*.72;
+        addLine(svg,x,y,mx,my,"moonLine");
+        drawBodyAsset(svg,m,mx,my,m.isMainworld?15:9);
+        if(opts.labels && m.isMainworld) addText(svg,mx,my+25,m.name,"smallLabel",10,"middle");
+      });
+    }
+  });
+}
+function drawBodyAsset(svg,b,x,y,r){
+  const asset=normalizeAsset(b.asset || b.type);
+  if(asset==="asteroid" && b.type==="belt"){
+    drawAsteroidCluster(svg,x,y,r,hashString(currentSystem.seed+b.name+"belt"));
+    return;
+  }
+  const file=PLANET_FILES[asset] || PLANET_FILES.rocky;
+  addImage(svg,PLANET_ASSET_PATH+file,x-r,y-r,r*2,r*2);
+}
+function drawStarAsset(svg,x,y,star,size){
+  const cls=star?.spectralClass || "G";
+  const file=STAR_FILES[cls] || STAR_FILES.default;
+  addImage(svg,STAR_ASSET_PATH+file,x-size/2,y-size/2,size,size,"starGlow");
+}
+function drawAsteroidCluster(svg,x,y,r,seed){
+  const rand=mulberry32(seed);
+  for(let i=0;i<18;i++){
+    const a=rand()*Math.PI*2, d=rand()*r;
+    const ar=1.2+rand()*2.6;
+    addImage(svg,PLANET_ASSET_PATH+PLANET_FILES.asteroid,x+Math.cos(a)*d-ar,y+Math.sin(a)*d*.55-ar,ar*2,ar*2);
+  }
+}
+function normalizeAsset(asset){
+  const a=String(asset||"rocky").toLowerCase().replace(/[\s/-]+/g,"_");
+  if(a==="gas_giant") return "gas_giant";
+  if(a==="ringed_gas_giant") return "ringed_gas_giant";
+  if(a==="hot_gas_giant") return "hot_gas_giant";
+  if(a==="ice_rock") return "ice";
+  if(a==="exotic") return "exoit";
+  return PLANET_FILES[a] ? a : "rocky";
+}
+function labelForAsset(asset){
+  return normalizeAsset(asset).replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase()).replace("Exoit","Exotic");
 }
 
 function renderStats(){
-  const s=currentSystem, uwp=parseUWP(s.world.uwp);
-  const data=[
-    ["Star Type",s.star.raw+" "+starName(s.star),"red"],
+  const s=currentSystem,w=s.world,u=parseUWP(w.uwp);
+  const rows=[
+    ["Starport",u.starport||"?"],
+    ["Size",u.size],
+    ["Atmosphere",u.atm],
+    ["Hydro",u.hydro],
+    ["Population",u.pop],
+    ["Tech",u.tl],
     ["Gas Giants",s.counts.gasGiants],
-    ["Planetoid Belts",s.counts.planetoidBelts],
-    ["Other Worlds",s.counts.otherWorlds],
-    ["Main World",s.world.name],
-    ["Starport",uwp.starport||"?"],
-    ["Allegiance",s.world.allegiance||"?"],
-    ["Population",populationText(uwp)],
-    ["Bases",baseInfo(s.worldRecord).label || "None"]
+    ["Belts",s.counts.planetoidBelts],
+    ["Bodies",s.counts.generatedBodies]
   ];
-  $("stats").innerHTML=data.map(([k,v,cls])=>`<div class="stat"><div class="k">${esc(k)}</div><div class="v ${cls||""}">${esc(v)}</div></div>`).join("");
+  $("stats").innerHTML=rows.map(([k,v])=>`<div class="stat"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join("");
 }
 function renderSummary(){
-  const s=currentSystem, uwp=parseUWP(s.world.uwp);
-  $("summary").innerHTML = `
-    <dt>Main World</dt><dd>${esc(s.world.name)}</dd>
-    <dt>UWP</dt><dd>${esc(s.world.uwp)}</dd>
-    <dt>UWP Breakdown</dt><dd>${renderUWPTable(s.world.uwp)}</dd>
-    <dt>Trade Codes</dt><dd>${esc(translateRemarks(s.world.remarks))}</dd>
-    <dt>Star Type</dt><dd>${esc(s.star.raw)} ${esc(starName(s.star))}</dd>
-    <dt>Population</dt><dd>${esc(populationText(uwp))}</dd>
-    <dt>Allegiance</dt><dd>${esc(expandAllegiance(s.world.allegiance||"?"))}</dd>
-    <dt>Bases</dt><dd>${esc(baseInfo(s.worldRecord).label || "None")}</dd>
-  `;
-  $("mapLink").href = travellerMapLink(s);
+  const s=currentSystem,w=s.world,u=parseUWP(w.uwp),main=findMainworld(s);
+  $("summary").innerHTML=[
+    ["Name",w.name],
+    ["Location",`${w.sector} ${w.hex}`],
+    ["UWP",w.uwp || "Unknown"],
+    ["Mainworld Type",main ? labelForAsset(main.asset || main.type) : "Unknown"],
+    ["Remarks",w.remarks || "None"],
+    ["Stellar",w.stellar],
+    ["Generated Bodies",s.counts.generatedBodies]
+  ].map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+  $("mapLink").href = `${API}/go/${encodeURIComponent(w.sector)}/${encodeURIComponent(w.hex)}`;
+}
+function findMainworld(sys){
+  for(const b of sys.bodies){
+    if(b.isMainworld) return b;
+    const m=(b.moons||[]).find(x=>x.isMainworld);
+    if(m) return m;
+  }
+  return null;
 }
 
-function drawCinematic(){
-  const s=currentSystem, svg=$("cinematicSvg");
-  svg.innerHTML=""; svg.setAttribute("viewBox","0 0 1600 420");
-  defs(svg); addStars(svg,1600,420,90);
-  addText(svg,28,34,s.world.name+" System","label",16);
-  addText(svg,28,58,`${s.world.sector} ${s.world.hex} | ${s.world.uwp} | ${s.star.raw}`,"smallLabel",12);
-  drawBaseIcons(svg, 28, 86, baseInfo(s.worldRecord));
-
-  const bodies=s.bodies;
-  const n=bodies.length;
-  const startX=135, endX=1540, baseY=220;
-  const spacing=(endX-startX)/Math.max(1,n);
-  drawPlanet(svg,70,230,s.star.visualRadius*1.45,s.star.color,false,"starGlow");
-  addText(svg,47,145,s.star.raw,"bigLabel",21);
-  addText(svg,34,170,starName(s.star),"redText",12);
-
-  bodies.forEach((b,i)=>{
-    const x=startX+(i+.5)*spacing;
-    const isBig=b.isMainworld||b.type==="gas giant";
-    const y= isBig ? baseY : baseY+8;
-    if(b.type==="belt"){ drawBeltColumn(svg,x,y,b); return; }
-    const r=b.isMainworld?28:b.type==="gas giant"?30:Math.max(9,b.size*.95);
-    const labelY= b.isMainworld ? 124 : 148;
-    addCenteredText(svg,x,labelY,b.name,b.isMainworld?"bigLabel":"label",b.isMainworld?25:13);
-    addCenteredText(svg,x,labelY+23,b.isMainworld?"Main World":title(b.type),b.isMainworld?"blueLabel":"typeLabel",b.isMainworld?13:11);
-    drawPlanet(svg,x,y,r,b.color,b.rings,"glow");
-    if(b.isMainworld) {
-      addCircle(svg,x,y,r+8,"none","mainHalo");
-      if(hasHighport(s)) drawHighport(svg,x,y,r);
-    }
-
-    if(opts.moons && b.moons && b.moons.length){
-      const moonCount=Math.min(4,b.moons.length);
-      const lineTop=y+r+6, lineBottom=lineTop+moonCount*34;
-      addLine(svg,x,lineTop,x,lineBottom,"moonLine");
-      b.moons.slice(0,4).forEach((m,mi)=>{
-        const my=lineTop+24+mi*34;
-        const mr=m.isMainworld?12:6;
-        drawPlanet(svg,x,my,mr,m.color||"#a8b1bf",false,"glow");
-        addCenteredText(svg,x,my+24,m.name,m.isMainworld?"label":"smallLabel",m.isMainworld?12:10);
-      });
-    }
-  });
+function parseUWP(uwp){
+  const s=String(uwp||"").trim();
+  const m=s.match(/^([A-EX])([0-9A-F])([0-9A-F])([0-9A-F])([0-9A-F])([0-9A-F])([0-9A-F])-([0-9A-HJ-NP-Z])$/i);
+  const hex=v => parseInt(v,16);
+  if(!m) return {starport:"?",size:5,atm:5,hydro:5,pop:5,gov:0,law:0,tl:8};
+  return {starport:m[1].toUpperCase(),size:hex(m[2]),atm:hex(m[3]),hydro:hex(m[4]),pop:hex(m[5]),gov:hex(m[6]),law:hex(m[7]),tl:hex(m[8])};
 }
-
-function drawOrbital(){
-  const s=currentSystem, svg=$("orbitalSvg");
-  svg.innerHTML="";
-  const maxOrbit=Math.max(...s.bodies.map(b=>b.orbit||0),1);
-
-  // Scale canvas size with system size so zooming does not push outer worlds off-screen.
-  const dynamicSize = Math.max(2200, 1200 + (maxOrbit * 180));
-  svg.setAttribute("viewBox",`0 0 ${dynamicSize} ${dynamicSize}`);
-
-  defs(svg);
-  addStars(svg,dynamicSize,dynamicSize,Math.floor(dynamicSize/12));
-
-  const cx=dynamicSize/2;
-  const cy=dynamicSize/2;
-
-  const baseScale=(dynamicSize * 0.38)/maxOrbit;
-  const scale=baseScale*zoom;
-  drawPlanet(svg,cx,cy,s.star.visualRadius,s.star.color,false,"starGlow");
-
-  s.bodies.forEach((b,i)=>{
-    const r=Math.max(42,(b.orbit||.2)*scale);
-    if(opts.orbits) addOrbit(svg,cx,cy,r, zoom>1.4?"orbitSolid":"orbit");
-    const angle=(-120+i*41)%360 * Math.PI/180;
-    const x=cx+Math.cos(angle)*r;
-    const y=cy+Math.sin(angle)*r;
-
-    if(b.type==="belt"){
-      if(opts.belts) drawOrbitBelt(svg,cx,cy,r);
-      if(opts.labels) addText(svg,x+8,y-8,b.name,"smallLabel",11);
-      return;
-    }
-
-    drawPlanet(svg,x,y,b.isMainworld?13:b.type==="gas giant"?20:9,b.color,b.rings,"glow");
-    if(b.isMainworld) {
-      addCircle(svg,x,y,18,"none","mainHalo");
-      if(hasHighport(s)) drawHighport(svg,x,y,13);
-    }
-
-    if(opts.moons && b.moons?.length && zoom>1.15){
-      const moonR=(b.type==="gas giant"?34:25)*Math.min(1.5,zoom);
-      if(opts.orbits) addOrbit(svg,x,y,moonR,"orbit");
-      b.moons.slice(0,5).forEach((m,mi)=>{
-        const ma=(mi*72)*Math.PI/180;
-        const mx=x+Math.cos(ma)*moonR, my=y+Math.sin(ma)*moonR;
-        drawPlanet(svg,mx,my,m.isMainworld?7:4,m.color||"#a8b1bf",false,"glow");
-        if(opts.labels && m.isMainworld) addText(svg,mx+8,my-6,m.name,"label",12);
-      });
-    }
-
-    if(opts.labels){
-      const dx=x>cx?12:-12;
-      const anchor=x>cx?"start":"end";
-      addText(svg,x+dx,y-7,b.name,b.isMainworld?"label":"smallLabel",b.isMainworld?14:12,anchor);
-      addText(svg,x+dx,y+10,b.isMainworld?"Main World":title(b.type),"typeLabel",10,anchor);
-    }
-  });
-
-  svg.style.width = dynamicSize + "px";
-  svg.style.height = dynamicSize + "px";
-
-  // Auto-center the orbital canvas on load/render.
-  requestAnimationFrame(() => {
-    const canvas = document.querySelector(".orbitalCanvas");
-    if(canvas){
-      canvas.scrollLeft = Math.max(0, (dynamicSize - canvas.clientWidth) / 2);
-      canvas.scrollTop = Math.max(0, (dynamicSize - canvas.clientHeight) / 2);
-    }
-  });
-
-  addText(svg,22,32,`${s.world.name} Orbital View`,"label",18);
-  addText(svg,22,55,`Zoom ${zoom.toFixed(1)}x | the canvas scales with the system so zoom keeps outer planets visible`,"smallLabel",12);
-  drawBaseIcons(svg, 22, 82, baseInfo(s.worldRecord));
+function parsePBG(pbg){
+  const s=String(pbg||"").trim();
+  if(s.length<3) return {populationMultiplier:NaN,belts:NaN,gasGiants:NaN};
+  return {populationMultiplier:parseInt(s[0],16),belts:parseInt(s[1],16),gasGiants:parseInt(s[2],16)};
 }
-
-function drawBeltColumn(svg,x,y,b){
-  addCenteredText(svg,x,148,b.name,"label",13);
-  addCenteredText(svg,x,171,"Planetoid Belt","typeLabel",11);
-  for(let i=0;i<24;i++) addCircle(svg,x+(Math.random()-.5)*36,y+(Math.random()-.5)*24,1.4+Math.random()*1.8,"#9aa8bd","");
+function estimateWorldCount(world){
+  const u=parseUWP(world.UWP||"");
+  return Math.max(4,Math.min(16,6+Math.floor((u.size+u.hydro+u.pop)/5)));
 }
-function drawOrbitBelt(svg,cx,cy,r){
-  for(let i=0;i<100;i++){
-    const a=Math.random()*Math.PI*2, jitter=(Math.random()-.5)*14;
-    addCircle(svg,cx+Math.cos(a)*(r+jitter),cy+Math.sin(a)*(r+jitter),1.1,"#9aa8bd","");
+function guessGasGiants(world){ return 1 + (hashString((world.Name||"")+world.UWP)%3); }
+function guessBelts(world){ return hashString((world.Hex||"")+world.UWP)%2; }
+function parseStar(stellar){
+  const raw=String(stellar||"G2 V");
+  const m=raw.match(/([OBAFGKM])\s*([0-9])?\s*([IV]+|D)?/i);
+  const spectralClass=m?m[1].toUpperCase():"G";
+  const subtype=m&&m[2]?Number(m[2]):2;
+  const luminosity=m&&m[3]?m[3].toUpperCase():"V";
+  const radius={O:78,B:62,A:48,F:40,G:34,K:28,M:22}[spectralClass] || 34;
+  return {raw,spectralClass,subtype,luminosity,radius};
+}
+function starName(star){ return `${star.spectralClass}${star.subtype} ${star.luminosity}`; }
+
+function addDefs(svg){
+  const defs=document.createElementNS("http://www.w3.org/2000/svg","defs");
+  const style=document.createElementNS("http://www.w3.org/2000/svg","style");
+  style.textContent=`.mainHalo{fill:none;stroke:#e8f4ff;stroke-width:2.2;filter:drop-shadow(0 0 8px #61b7ff)}.assetImage{image-rendering:auto}`;
+  defs.appendChild(style);
+  svg.appendChild(defs);
+}
+function clear(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+function addRect(svg,x,y,w,h,fill){ const e=document.createElementNS("http://www.w3.org/2000/svg","rect"); e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("width",w);e.setAttribute("height",h);e.setAttribute("fill",fill);svg.appendChild(e);return e; }
+function addCircle(svg,x,y,r,fill,cls){ const e=document.createElementNS("http://www.w3.org/2000/svg","circle"); e.setAttribute("cx",x);e.setAttribute("cy",y);e.setAttribute("r",r);e.setAttribute("fill",fill); if(cls)e.setAttribute("class",cls); svg.appendChild(e);return e; }
+function addLine(svg,x1,y1,x2,y2,cls){ const e=document.createElementNS("http://www.w3.org/2000/svg","line"); e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2); if(cls)e.setAttribute("class",cls); svg.appendChild(e);return e; }
+function addText(svg,x,y,text,cls,size,anchor){
+  const e=document.createElementNS("http://www.w3.org/2000/svg","text");
+  e.setAttribute("x",x); e.setAttribute("y",y);
+  if(cls)e.setAttribute("class",cls);
+  if(size)e.setAttribute("font-size",size);
+  if(anchor)e.setAttribute("text-anchor",anchor);
+  e.textContent=text;
+  svg.appendChild(e);
+  return e;
+}
+function addImage(svg,href,x,y,w,h,cls="assetImage"){
+  const e=document.createElementNS("http://www.w3.org/2000/svg","image");
+  e.setAttribute("href",href);
+  e.setAttribute("x",x); e.setAttribute("y",y); e.setAttribute("width",w); e.setAttribute("height",h);
+  e.setAttribute("preserveAspectRatio","xMidYMid meet");
+  if(cls)e.setAttribute("class",cls);
+  svg.appendChild(e);
+  return e;
+}
+function drawStars(svg,w,h,seed){
+  const rand=mulberry32(seed);
+  for(let i=0;i<180;i++){
+    const x=rand()*w,y=rand()*h,r=rand()*1.4+.2;
+    addCircle(svg,x,y,r,`rgba(255,255,255,${.25+rand()*.65})`);
   }
 }
-
-function drawPlanet(svg,x,y,r,color,rings,cls=""){
-  const kind = inferIconKind(color, rings, r, cls);
-  const iconId = planetIconDataUri(kind, color);
-  const size = r * 2.4;
-
-  if(rings){
-    const back=document.createElementNS("http://www.w3.org/2000/svg","ellipse");
-    back.setAttribute("cx",x); back.setAttribute("cy",y);
-    back.setAttribute("rx",r*2.0); back.setAttribute("ry",r*.44);
-    back.setAttribute("class","ring");
-    svg.appendChild(back);
-  }
-
-  const img=document.createElementNS("http://www.w3.org/2000/svg","image");
-  img.setAttribute("x",x-size/2);
-  img.setAttribute("y",y-size/2);
-  img.setAttribute("width",size);
-  img.setAttribute("height",size);
-  img.setAttribute("href",iconId);
-  if(cls) img.setAttribute("class",cls);
-  svg.appendChild(img);
-
-  if(rings){
-    const front=document.createElementNS("http://www.w3.org/2000/svg","ellipse");
-    front.setAttribute("cx",x); front.setAttribute("cy",y);
-    front.setAttribute("rx",r*2.0); front.setAttribute("ry",r*.44);
-    front.setAttribute("fill","none");
-    front.setAttribute("stroke","#f0e4be");
-    front.setAttribute("stroke-width",Math.max(2,r*.18));
-    front.setAttribute("opacity",".45");
-    svg.appendChild(front);
-  }
-}
-
-function inferIconKind(color, rings, r, cls){
-  if(rings || r > 22) return "gas";
-  const c = hexToRgb(color);
-  if(c.b > c.r + 35) return "water";
-  if(c.r > 170 && c.g > 120 && c.b < 120) return "desert";
-  if(c.r > 150 && c.g > 150 && c.b > 150) return "ice";
-  if(c.g > c.r && c.g > c.b) return "garden";
-  return "rocky";
-}
-
-function planetIconDataUri(kind, base){
-  const safe = String(base || "#888888");
-  const light = lighten(safe,.55);
-  const dark = darken(safe,.58);
-  const mid = lighten(safe,.18);
-
-  const templates = {
-    water: `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-        <defs>
-          <radialGradient id="g" cx="35%" cy="28%" r="70%">
-            <stop offset="0" stop-color="#ffffff"/>
-            <stop offset=".23" stop-color="#79c7ff"/>
-            <stop offset=".62" stop-color="${safe}"/>
-            <stop offset="1" stop-color="${dark}"/>
-          </radialGradient>
-          <clipPath id="c"><circle cx="64" cy="64" r="56"/></clipPath>
-          <filter id="s"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#69bfff" flood-opacity=".75"/></filter>
-        </defs>
-        <circle cx="64" cy="64" r="56" fill="url(#g)" filter="url(#s)"/>
-        <g clip-path="url(#c)" opacity=".42">
-          <path d="M13 53 C30 38,45 42,54 55 C65 72,85 53,105 60 C96 76,73 81,54 72 C36 63,28 66,13 53Z" fill="#375b35"/>
-          <path d="M50 19 C72 24,76 37,65 49 C52 43,38 35,50 19Z" fill="#44693d"/>
-          <path d="M69 84 C84 78,103 86,115 101 C91 111,66 105,69 84Z" fill="#38572f"/>
-          <path d="M9 74 C29 69,42 78,45 91 C29 91,16 86,9 74Z" fill="#dbefff" opacity=".35"/>
-        </g>
-        <ellipse cx="83" cy="64" rx="29" ry="52" fill="#000" opacity=".18"/>
-        <circle cx="64" cy="64" r="56" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3"/>
-      </svg>`,
-    desert: `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-        <defs>
-          <radialGradient id="g" cx="34%" cy="28%" r="74%">
-            <stop offset="0" stop-color="#fff4c7"/>
-            <stop offset=".35" stop-color="${light}"/>
-            <stop offset=".72" stop-color="${safe}"/>
-            <stop offset="1" stop-color="${dark}"/>
-          </radialGradient>
-          <clipPath id="c"><circle cx="64" cy="64" r="56"/></clipPath>
-        </defs>
-        <circle cx="64" cy="64" r="56" fill="url(#g)"/>
-        <g clip-path="url(#c)" opacity=".55">
-          <path d="M-3 44 C22 32,50 51,75 40 C94 32,116 35,132 42 L132 58 C99 47,80 62,55 55 C31 48,12 54,-3 61Z" fill="#7a5630"/>
-          <path d="M-2 78 C18 70,37 79,58 73 C82 65,101 70,130 82 L130 95 C104 85,82 84,56 91 C34 96,16 88,-2 96Z" fill="#5b3f28" opacity=".65"/>
-          <path d="M28 18 C43 24,47 33,38 40 C25 37,17 29,28 18Z" fill="#8b663d"/>
-        </g>
-        <ellipse cx="84" cy="64" rx="30" ry="53" fill="#000" opacity=".20"/>
-        <circle cx="64" cy="64" r="56" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="3"/>
-      </svg>`,
-    gas: `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-        <defs>
-          <radialGradient id="g" cx="35%" cy="28%" r="72%">
-            <stop offset="0" stop-color="#fff8d8"/>
-            <stop offset=".32" stop-color="${light}"/>
-            <stop offset=".72" stop-color="${safe}"/>
-            <stop offset="1" stop-color="${dark}"/>
-          </radialGradient>
-          <clipPath id="c"><circle cx="64" cy="64" r="56"/></clipPath>
-        </defs>
-        <circle cx="64" cy="64" r="56" fill="url(#g)"/>
-        <g clip-path="url(#c)" opacity=".7">
-          <path d="M2 36 C33 30,62 45,126 32 L126 43 C87 55,43 44,2 50Z" fill="#fff1b9" opacity=".55"/>
-          <path d="M0 58 C37 48,72 70,128 56 L128 68 C92 82,45 66,0 75Z" fill="#6b452a" opacity=".38"/>
-          <path d="M3 84 C43 77,83 88,126 80 L126 92 C86 103,44 91,3 98Z" fill="#f3d49c" opacity=".45"/>
-          <ellipse cx="89" cy="67" rx="12" ry="7" fill="#8b4a2e" opacity=".45"/>
-        </g>
-        <ellipse cx="85" cy="64" rx="30" ry="53" fill="#000" opacity=".16"/>
-        <circle cx="64" cy="64" r="56" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3"/>
-      </svg>`,
-    ice: `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-        <defs>
-          <radialGradient id="g" cx="35%" cy="28%" r="72%">
-            <stop offset="0" stop-color="#ffffff"/>
-            <stop offset=".4" stop-color="#d9f4ff"/>
-            <stop offset=".75" stop-color="${safe}"/>
-            <stop offset="1" stop-color="${dark}"/>
-          </radialGradient>
-          <clipPath id="c"><circle cx="64" cy="64" r="56"/></clipPath>
-        </defs>
-        <circle cx="64" cy="64" r="56" fill="url(#g)"/>
-        <g clip-path="url(#c)" opacity=".5">
-          <path d="M12 40 L35 28 L58 45 L81 30 L116 45 L106 55 L80 47 L58 61 L35 44 L18 53Z" fill="#ffffff"/>
-          <path d="M17 82 L43 71 L73 88 L105 76 L122 91 L88 104 L59 92 L28 101Z" fill="#b8d3e4"/>
-        </g>
-        <ellipse cx="84" cy="64" rx="30" ry="53" fill="#000" opacity=".18"/>
-        <circle cx="64" cy="64" r="56" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="3"/>
-      </svg>`,
-    garden: `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-        <defs>
-          <radialGradient id="g" cx="35%" cy="28%" r="72%">
-            <stop offset="0" stop-color="#ffffff"/>
-            <stop offset=".3" stop-color="#7fd6ff"/>
-            <stop offset=".67" stop-color="#4489bd"/>
-            <stop offset="1" stop-color="#10293e"/>
-          </radialGradient>
-          <clipPath id="c"><circle cx="64" cy="64" r="56"/></clipPath>
-        </defs>
-        <circle cx="64" cy="64" r="56" fill="url(#g)"/>
-        <g clip-path="url(#c)">
-          <path d="M22 42 C42 23,64 34,58 53 C52 71,30 66,22 42Z" fill="#2f8a3b" opacity=".8"/>
-          <path d="M70 47 C92 35,111 45,112 65 C96 73,80 68,70 47Z" fill="#3b9b46" opacity=".75"/>
-          <path d="M45 81 C61 71,82 82,88 102 C68 109,48 100,45 81Z" fill="#2c7b38" opacity=".8"/>
-          <path d="M14 72 C38 64,63 69,83 76 C59 82,35 84,14 72Z" fill="#fff" opacity=".28"/>
-        </g>
-        <ellipse cx="85" cy="64" rx="30" ry="53" fill="#000" opacity=".18"/>
-        <circle cx="64" cy="64" r="56" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="3"/>
-      </svg>`,
-    rocky: `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-        <defs>
-          <radialGradient id="g" cx="35%" cy="28%" r="72%">
-            <stop offset="0" stop-color="#ffffff"/>
-            <stop offset=".32" stop-color="${light}"/>
-            <stop offset=".72" stop-color="${safe}"/>
-            <stop offset="1" stop-color="${dark}"/>
-          </radialGradient>
-          <clipPath id="c"><circle cx="64" cy="64" r="56"/></clipPath>
-        </defs>
-        <circle cx="64" cy="64" r="56" fill="url(#g)"/>
-        <g clip-path="url(#c)" opacity=".5">
-          <ellipse cx="43" cy="43" rx="11" ry="7" fill="${dark}"/>
-          <ellipse cx="83" cy="57" rx="15" ry="9" fill="${dark}"/>
-          <ellipse cx="55" cy="86" rx="20" ry="8" fill="${dark}"/>
-          <ellipse cx="29" cy="70" rx="9" ry="6" fill="${light}"/>
-        </g>
-        <ellipse cx="84" cy="64" rx="30" ry="53" fill="#000" opacity=".22"/>
-        <circle cx="64" cy="64" r="56" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="3"/>
-      </svg>`
-  };
-
-  const svg = templates[kind] || templates.rocky;
-  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
-}
-
-function hexToRgb(hex){
-  const h=String(hex).replace("#","");
-  if(h.length!==6) return {r:180,g:180,b:180};
-  return {r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16)};
-}
-function rgbToHex({r,g,b}){
-  const c=n=>Math.max(0,Math.min(255,Math.round(n))).toString(16).padStart(2,"0");
-  return "#"+c(r)+c(g)+c(b);
-}
-function lighten(hex, amt){
-  const c=hexToRgb(hex);
-  return rgbToHex({r:c.r+(255-c.r)*amt,g:c.g+(255-c.g)*amt,b:c.b+(255-c.b)*amt});
-}
-function darken(hex, amt){
-  const c=hexToRgb(hex);
-  return rgbToHex({r:c.r*(1-amt),g:c.g*(1-amt),b:c.b*(1-amt)});
-}
-
-function defs(svg){ let d=svg.querySelector("defs"); if(!d){ d=document.createElementNS("http://www.w3.org/2000/svg","defs"); svg.appendChild(d);} return d; }
-function addStars(svg,w,h,count){ for(let i=0;i<count;i++) addCircle(svg,Math.random()*w,Math.random()*h,Math.random()*1.2+.3,`rgba(180,210,255,${Math.random()*.5+.2})`,""); }
-function addCircle(svg,x,y,r,fill,cls){ const e=document.createElementNS("http://www.w3.org/2000/svg","circle"); e.setAttribute("cx",x); e.setAttribute("cy",y); e.setAttribute("r",r); e.setAttribute("fill",fill); if(cls)e.setAttribute("class",cls); svg.appendChild(e); }
-function addLine(svg,x1,y1,x2,y2,cls){ const e=document.createElementNS("http://www.w3.org/2000/svg","line"); e.setAttribute("x1",x1); e.setAttribute("y1",y1); e.setAttribute("x2",x2); e.setAttribute("y2",y2); e.setAttribute("class",cls); svg.appendChild(e); }
-function addOrbit(svg,x,y,r,cls){ const e=document.createElementNS("http://www.w3.org/2000/svg","circle"); e.setAttribute("cx",x); e.setAttribute("cy",y); e.setAttribute("r",r); e.setAttribute("class",cls); svg.appendChild(e); }
-function addText(svg,x,y,text,cls,size,anchor="start"){ const e=document.createElementNS("http://www.w3.org/2000/svg","text"); e.setAttribute("x",x); e.setAttribute("y",y); e.setAttribute("class",cls); if(size)e.setAttribute("font-size",size); e.setAttribute("text-anchor",anchor); e.textContent=text; svg.appendChild(e); }
-function addCenteredText(svg,x,y,text,cls,size){ addText(svg,x,y,text,cls,size,"middle"); }
-
-
-function baseInfo(world){
-  const raw = String(world?.Bases || world?.bases || world?.Base || "").trim();
-  const out = [];
-  // Traveller Map's legend distinguishes naval/scout/military and other bases.
-  // Codes vary a little by milieu/polity, so this is deliberately forgiving.
-  if(/[NKD]/.test(raw)) out.push({icon:"★", name:"Naval Base"});
-  if(/S/.test(raw)) out.push({icon:"▲", name:"Scout Base"});
-  if(/M/.test(raw)) out.push({icon:"✦", name:"Military Base"});
-  if(/R/.test(raw)) out.push({icon:"Γ", name:"Research Station"});
-  if(/P/.test(raw)) out.push({icon:"P", name:"Penal Colony"});
-  if(/C/.test(raw)) out.push({icon:"∗∗", name:"Corsair / Embassy"});
-  return { raw, items: out, label: out.map(x=>x.name).join(" — ") };
-}
-function drawBaseIcons(svg,x,y,info){
-  if(!info || !info.items || !info.items.length) return;
-  let cx=x;
-  info.items.forEach((b,i)=>{
-    addText(svg,cx,y,b.icon,"baseIcon",18);
-    cx += b.icon.length > 1 ? 28 : 22;
-  });
-  addText(svg,cx+4,y-2,info.label,"baseText",11);
-}
-function travellerMapLink(s){
-  const sector = encodeURIComponent(s.world.sector || "");
-  const hex = encodeURIComponent(s.world.hex || "");
-  return `https://travellermap.com/go/${sector}/${hex}`;
-}
-
-
-
-function renderUWPTable(uwp){
-  const u = parseUWP(uwp);
-
-  const atmospheres = {
-    0:"No atmosphere",
-    1:"Trace",
-    2:"Very thin",
-    3:"Very thin, tainted",
-    4:"Thin, tainted",
-    5:"Thin",
-    6:"Standard",
-    7:"Standard, tainted",
-    8:"Dense",
-    9:"Dense, tainted",
-    10:"Exotic",
-    11:"Corrosive",
-    12:"Insidious",
-    13:"Dense, high",
-    14:"Thin, low",
-    15:"Unusual"
-  };
-
-  const governments = {
-    0:"No government",
-    1:"Company/corporation",
-    2:"Participating democracy",
-    3:"Self-perpetuating oligarchy",
-    4:"Representative democracy",
-    5:"Feudal technocracy",
-    6:"Captive government",
-    7:"Balkanized",
-    8:"Civil service bureaucracy",
-    9:"Impersonal bureaucracy",
-    10:"Charismatic dictator",
-    11:"Non-charismatic leader",
-    12:"Charismatic oligarchy",
-    13:"Religious dictatorship"
-  };
-
-  const starports = {
-    A:"Excellent",
-    B:"Good",
-    C:"Routine",
-    D:"Poor",
-    E:"Frontier",
-    X:"None"
-  };
-
-  return `
-  <table class="uwpTable">
-    <tr><td>Starport</td><td>${u.starport} — ${starports[u.starport] || "Unknown"}</td></tr>
-    <tr><td>Size</td><td>${u.size} — ${sizeText(u.size)}</td></tr>
-    <tr><td>Atmosphere</td><td>${u.atm} — ${atmospheres[u.atm] || "Unknown"}</td></tr>
-    <tr><td>Hydrographics</td><td>${u.hydro} — ${u.hydro * 10}% surface water</td></tr>
-    <tr><td>Population</td><td>${u.pop} — ${populationBand(u.pop)}</td></tr>
-    <tr><td>Government</td><td>${u.gov} — ${governments[u.gov] || "Unknown"}</td></tr>
-    <tr><td>Law Level</td><td>${u.law} — ${lawText(u.law)}</td></tr>
-    <tr><td>Tech Level</td><td>${ehexLabel(u.tl)} — ${techText(u.tl)}</td></tr>
-  </table>`;
-}
-
-function sizeText(size){
-  if(size === 0) return "Asteroid / tiny body";
-  const km = size * 1600;
-  const g = (size * 0.12).toFixed(2);
-  return `${km.toLocaleString()} km (${g}g)`;
-}
-
-function populationBand(pop){
-  if(pop <= 0) return "None";
-  if(pop === 1) return "Tens";
-  if(pop === 2) return "Hundreds";
-  if(pop === 3) return "Thousands";
-  if(pop === 4) return "Tens of thousands";
-  if(pop === 5) return "Hundreds of thousands";
-  if(pop === 6) return "Millions";
-  if(pop === 7) return "Tens of millions";
-  if(pop === 8) return "Hundreds of millions";
-  if(pop === 9) return "Billions";
-  return "Tens of billions";
-}
-
-function lawText(law){
-  if(law <= 1) return "Few restrictions";
-  if(law <= 3) return "Light weapons restricted";
-  if(law <= 5) return "Personal concealable weapons restricted";
-  if(law <= 7) return "Shotguns prohibited";
-  if(law <= 9) return "Most weapons prohibited";
-  if(law <= 11) return "Rigid control state";
-  return "Extreme legal restrictions";
-}
-
-function techText(tl){
-  if(tl <= 3) return "Primitive";
-  if(tl <= 5) return "Industrial";
-  if(tl <= 8) return "Average interstellar";
-  if(tl <= 11) return "Advanced";
-  if(tl <= 14) return "High Imperial";
-  return "Extreme technology";
-}
-
-function expandAllegiance(code){
-  const map = {
-    "--":"Uncharted Space",
-    "As":"Aslan Hierate",
-    "AsHi":"Aslan Hierate",
-    "AsMw":"Aslan Hierate, single multiple-world clan dominates",
-    "AsSc":"Aslan Hierate, multiple clans split control",
-    "AsVc":"Aslan Hierate, vassal clan dominates",
-    "AsWc":"Aslan Hierate, single one-world clan dominates",
-    "AsXX":"Aslan Hierate, unknown",
-    "Cs":"Client State",
-    "CsIm":"Client State, Third Imperium",
-    "CsZh":"Client State, Zhodani Consulate",
-    "Dr":"Droyne World",
-    "DrWo":"Droyne World",
-    "Hv":"Hive Federation",
-    "HvFd":"Hive Federation",
-    "Im":"Third Imperium",
-    "ImAp":"Third Imperium, Amec Protectorate",
-    "ImDa":"Third Imperium, Domain of Antares",
-    "ImDc":"Third Imperium, Domain of Sylea",
-    "ImDd":"Third Imperium, Domain of Deneb",
-    "ImDg":"Third Imperium, Domain of Gateway",
-    "ImDi":"Third Imperium, Domain of Ilelish",
-    "ImDs":"Third Imperium, Domain of Sol",
-    "ImDv":"Third Imperium, Domain of Vland",
-    "ImLa":"Third Imperium, League of Antares",
-    "ImLu":"Third Imperium, Luriani Cultural Association",
-    "ImSy":"Third Imperium, Sylean Worlds",
-    "ImVd":"Third Imperium, Vegan Autonomous District",
-    "Kk":"K'kree Two Thousand Worlds",
-    "Kk2k":"K'kree Two Thousand Worlds",
-    "Na":"Non-Aligned",
-    "NaAs":"Non-Aligned, Aslan-dominated",
-    "NaHu":"Non-Aligned, Human-dominated",
-    "NaVa":"Non-Aligned, Vargr-dominated",
-    "NaXX":"Unclaimed",
-    "So":"Solomani Confederation",
-    "SoCf":"Solomani Confederation",
-    "SwCf":"Sword Worlds Confederation",
-    "Zh":"Zhodani Consulate",
-    "ZhCo":"Zhodani Consulate",
-    "XXXX":"Unknown"
-  };
-
-  if(map[code]) return map[code];
-
-  if(/^Im/.test(code)) return "Third Imperium, unspecified domain/province (" + code + ")";
-  if(/^So/.test(code)) return "Solomani-aligned polity (" + code + ")";
-  if(/^As/.test(code)) return "Aslan-aligned polity (" + code + ")";
-  if(/^Zh/.test(code)) return "Zhodani-aligned polity (" + code + ")";
-  if(/^Na/.test(code)) return "Non-Aligned polity (" + code + ")";
-  if(/^V/.test(code)) return "Vargr polity (" + code + ")";
-  if(/^Cs/.test(code)) return "Client State (" + code + ")";
-  return code;
-}
-
-function translateUWP(uwp){
-  const u = parseUWP(uwp);
-  const starports = {
-    A:"Excellent Starport", B:"Good Starport", C:"Routine Starport",
-    D:"Poor Starport", E:"Frontier Starport", X:"No Starport"
-  };
-  return `${starports[u.starport] || "Unknown Starport"}, Size ${u.size}, Atmosphere ${u.atm}, Hydrographics ${u.hydro}, Population ${u.pop}, Government ${u.gov}, Law ${u.law}, Tech ${ehexLabel(u.tl)}`;
-}
-
-function translateRemarks(remarks){
-  const map = {
-    Hi:"High Population",
-    Lo:"Low Population",
-    Ni:"Non-Industrial",
-    In:"Industrial",
-    Ag:"Agricultural",
-    Na:"Non-Agricultural",
-    Ri:"Rich",
-    Po:"Poor",
-    Va:"Vacuum World",
-    De:"Desert World",
-    Wa:"Water World",
-    Ga:"Garden World",
-    As:"Asteroid Belt",
-    Ic:"Ice-Capped",
-    Fl:"Fluid Oceans",
-    He:"Hellworld",
-    Cp:"Subsector Capital",
-    Cs:"Sector Capital",
-    Pr:"Pre-Rich",
-    Pz:"Puzzle World",
-    Ht:"High Technology",
-    Lt:"Low Technology",
-    Sa:"Satellite World",
-    Pi:"Pre-Industrial"
-  };
-
-  const parts = String(remarks || "").split(/\s+/).filter(Boolean);
-  const out = [];
-  parts.forEach(p => {
-    out.push(map[p] || p);
-  });
-  return out.join(" — ");
-}
-
-
-async function exportCurrentView(mode){
-  if(!currentSystem) return;
-  const svgEl = activeView === "cinematic" ? $("cinematicSvg") : $("orbitalSvg");
-  const filename = `${safeFileName(currentSystem.world.name)}-${activeView}.png`;
-  const blob = await svgToPngBlob(svgEl, activeView === "cinematic" ? 2400 : 2400);
-
+function exportCurrentView(mode){
+  const source = activeView==="cinematic" ? $("cinematicSvg") : $("orbitalSvg");
+  const clone = source.cloneNode(true);
+  clone.setAttribute("xmlns","http://www.w3.org/2000/svg");
+  const data = new XMLSerializer().serializeToString(clone);
+  const blob = new Blob([data], {type:"image/svg+xml"});
   const url = URL.createObjectURL(blob);
-
-  if(mode === "download"){
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
+  if(mode==="open") window.open(url,"_blank");
+  else{
+    const a=document.createElement("a");
+    a.href=url;
+    a.download=(currentSystem?.world?.name || "system").replace(/\W+/g,"_")+"_"+activeView+".svg";
     a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 2500);
-    return;
   }
-
-  // Open in a new tab as a real PNG image. Users can right-click and save it.
-  const win = window.open("");
-  if(!win){
-    alert("Pop-up blocked. Use Download PNG instead.");
-    URL.revokeObjectURL(url);
-    return;
-  }
-  win.document.write(`
-    <!doctype html>
-    <title>${filename}</title>
-    <body style="margin:0;background:#000;display:flex;align-items:flex-start;justify-content:center;">
-      <img src="${url}" alt="${filename}" style="max-width:100%;height:auto;">
-    </body>
-  `);
 }
-
-function svgToPngBlob(svgEl, targetWidth){
-  return new Promise((resolve, reject) => {
-    const clone = svgEl.cloneNode(true);
-    inlineExportStyles(clone);
-
-    // Inline dimensions from viewBox so the exported file is a normal bitmap.
-    const vb = (clone.getAttribute("viewBox") || "0 0 1600 420").split(/\s+/).map(Number);
-    const vbWidth = vb[2] || 1600;
-    const vbHeight = vb[3] || 420;
-    const scale = targetWidth / vbWidth;
-    const targetHeight = Math.round(vbHeight * scale);
-
-    clone.setAttribute("width", targetWidth);
-    clone.setAttribute("height", targetHeight);
-
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(clone);
-    const svgBlob = new Blob([svgString], {type:"image/svg+xml;charset=utf-8"});
-    const url = URL.createObjectURL(svgBlob);
-
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      const ctx = canvas.getContext("2d");
-
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      URL.revokeObjectURL(url);
-      canvas.toBlob(blob => {
-        if(blob) resolve(blob);
-        else reject(new Error("PNG export failed."));
-      }, "image/png");
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Could not render SVG as PNG."));
-    };
-    img.src = url;
-  });
-}
-
-
-function inlineExportStyles(svgClone){
-  const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
-  style.textContent = `
-    .label{fill:#f1f5ff;font-size:13px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .smallLabel{fill:#aebbd0;font-size:11px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .blueLabel{fill:#5db0ff;font-size:12px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .bigLabel{fill:white;font-size:24px;font-weight:750;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .typeLabel{fill:#d9e4f5;font-size:12px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .redText{fill:#ff6c5f;font-size:12px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .baseIcon{fill:#ffd479;font-size:16px;font-weight:800;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .baseText{fill:#ffd479;font-size:11px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .highportIcon{fill:#d9f0ff;font-size:14px;font-weight:900}
-    .orbit{fill:none;stroke:#24507f;stroke-width:1;stroke-dasharray:5 6;opacity:.85}
-    .orbitSolid{fill:none;stroke:#2869aa;stroke-width:1;opacity:.7}
-    .moonLine{stroke:#244768;stroke-width:1.2}
-    .ring{fill:none;stroke:#d8d0b0;stroke-width:5;opacity:.75}
-    .mainHalo{fill:none;stroke:#e8f4ff;stroke-width:2.2}
-    .glow{}
-    .starGlow{}
-  `;
-  const defsNode = svgClone.querySelector("defs");
-  if(defsNode) defsNode.prepend(style);
-  else svgClone.prepend(style);
-}
-
-
-function safeFileName(name){
-  return String(name || "traveller-system").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-}
-
-function parseUWP(uwp){ const p=String(uwp).trim().match(/^(.)(.)(.)(.)(.)(.)(.)-(.)/); if(!p)return{starport:"?",size:6,atm:6,hydro:5,pop:5,gov:0,law:0,tl:8}; return{starport:p[1],size:ehex(p[2]),atm:ehex(p[3]),hydro:ehex(p[4]),pop:ehex(p[5]),gov:ehex(p[6]),law:ehex(p[7]),tl:ehex(p[8])};}
-function parsePBG(pbg){ const s=String(pbg||"").trim(); if(s.length<3||s.includes("?"))return{}; return{popMultiplier:ehex(s[0]),belts:ehex(s[1]),gasGiants:ehex(s[2])};}
-function parseStar(stellar){ const s=String(stellar||"G2 V"); const f=s.match(/([OBAFGKM])\s*([0-9])?\s*(Ia|Ib|II|III|IV|V|VI|D)?/i); const cls=f?f[1].toUpperCase():"G"; const colors={O:"#9bbcff",B:"#b8d2ff",A:"#e7f0ff",F:"#fff4d4",G:"#ffd27a",K:"#ffac65",M:"#ff7055"}; const radii={O:38,B:34,A:30,F:26,G:24,K:21,M:19}; return{raw:s,spectralClass:cls,color:colors[cls]||"#ffd27a",visualRadius:radii[cls]||24};}
-function starName(star){ return {O:"Blue Star",B:"Blue-White Star",A:"White Star",F:"Yellow-White Star",G:"Yellow Star",K:"Orange Star",M:"Red Dwarf"}[star.spectralClass]||"Star"; }
-function ehex(ch){ const chars="0123456789ABCDEFGHJKLMNPQRSTUVWXYZ"; const n=chars.indexOf(String(ch).toUpperCase()); return n>=0?n:0; }
-function ehexLabel(n){ return n>=10 ? "ABCDEFGHJKLMNPQRSTUVWXYZ"[n-10] : String(n); }
-function estimateWorldCount(world){ const uwp=parseUWP(world.UWP||""); return Math.max(5,Math.min(18,7+Math.floor((uwp.pop||0)/2))); }
-function guessGasGiants(world){ return /M/i.test(String(world.Stellar||"")) ? 2 : 3; }
-function guessBelts(world){ return /\bAs\b/.test(String(world.Remarks||"")) ? 1 : 0; }
-function classifyMainworld(uwp,remarks){ if(/\bVa\b/.test(remarks)||uwp.atm===0)return"vacuum mainworld"; if(uwp.hydro===0)return"desert mainworld"; if(/\bWa\b/.test(remarks))return"water world"; if(/\bGa\b/.test(remarks))return"garden world"; return"mainworld"; }
-function colorForMainworld(uwp,remarks){ if(/\bVa\b/.test(remarks)||uwp.atm===0)return"#9a8f86"; if(uwp.hydro>=7)return"#4f8dd6"; if(uwp.hydro===0)return"#c89a5b"; if(/\bGa\b/.test(remarks))return"#68b36b"; return"#b9c3d3"; }
-function populationText(uwp){ if(!uwp.pop) return "None"; const mult=parsePBG(currentSystem?.world?.pbg||"").popMultiplier||1; const n=mult*Math.pow(10,uwp.pop); if(n>=1e9) return (n/1e9).toFixed(n%1e9?1:0)+" billion"; if(n>=1e6) return (n/1e6).toFixed(n%1e6?1:0)+" million"; return String(n); }
-function title(s){ return String(s).charAt(0).toUpperCase()+String(s).slice(1).toLowerCase(); }
-function pick(arr,rand){ return arr[Math.floor(rand()*arr.length)]; }
-function hashString(str){ let h=2166136261; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function hashString(str){ let h=2166136261>>>0; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
 function mulberry32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
-function esc(v){ return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c])); }
-
+function pick(arr,rand){ return arr[Math.floor(rand()*arr.length)]; }
+function title(s){ return String(s).charAt(0).toUpperCase()+String(s).slice(1); }
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c])); }
 
 loadSectorList();
 fetchWorldBySectorHex("Solomani Rim","0233");
