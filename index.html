@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Traveller System Viewer v6</title>
+  <title>Traveller System Viewer v8</title>
   <style>
     :root{
       --bg:#05070c; --panel:#07111d; --panel2:#0b1728; --text:#eef5ff; --muted:#9db0c9;
@@ -84,7 +84,7 @@
     .highportIcon{fill:#d9f0ff;font-size:14px;font-weight:900;filter:drop-shadow(0 0 5px #63b7ff)}
     .mainHalo{fill:none;stroke:#e8f4ff;stroke-width:2.2;filter:drop-shadow(0 0 8px #61b7ff)}
     .glow{filter:drop-shadow(0 0 8px rgba(100,170,255,.75))}
-    .starGlow{filter:drop-shadow(0 0 25px rgba(255,78,55,.9))}
+    .starGlow{filter:none}
     .assetImage{image-rendering:auto}
     @media(max-width:1100px){
       .main{grid-template-columns:1fr}
@@ -214,14 +214,17 @@ const PLANET_FILES = {
 };
 
 const STAR_FILES = {
-  O: "O.jpg",
-  B: "B.jpg",
-  A: "A.jpg",
-  F: "F.jpg",
-  G: "G.jpg",
-  K: "K.jpg",
-  M: "M.jpg",
-  default: "G.jpg"
+  O: "O.png",
+  B: "B.png",
+  A: "A.png",
+  F: "F.png",
+  G: "G.png",
+  K: "K.png",
+  M: "M.png",
+  brown_dwarf: "brown_dwarf.png",
+  protostar: "protostar.png",
+  pulsar: "pulsar.png",
+  default: "G.png"
 };
 
 const opts = { labels:true, moons:true, orbits:true, belts:true };
