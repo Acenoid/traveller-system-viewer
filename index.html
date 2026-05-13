@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Traveller System Viewer v17</title>
+  <title>Traveller System Viewer v28</title>
   <style>
     :root{
       --bg:#05070c; --panel:#07111d; --panel2:#0b1728; --text:#eef5ff; --muted:#9db0c9;
@@ -192,8 +192,8 @@
 
 <script>
 const API = "https://travellermap.com";
-const PLANET_ASSET_PATH = "./planet/";
-const STAR_ASSET_PATH = "./stars/";
+const PLANET_ASSET_PATH = "https://avorial.github.io/traveller-system-viewer/planet/";
+const STAR_ASSET_PATH = "https://avorial.github.io/traveller-system-viewer/stars/";
 
 const PLANET_FILES = {
   ammonia: "ammonia.png",
@@ -600,11 +600,39 @@ function drawGraphicHeader(svg){
   const subtitleText = `${w.sector} ${w.hex} | ${w.uwp || ""} | ${star.raw || w.stellar || ""}`;
   const baseText = baseOverlayText(w.remarks || "");
 
-  addText(svg,18,24,titleText,"graphicTitle",18,"start");
-  addText(svg,18,47,subtitleText,"graphicSubtitle",12,"start");
+  addExportSafeText(svg,18,24,titleText,{
+    fill:"#eef5ff",
+    fontSize:18,
+    fontWeight:750
+  });
+
+  addExportSafeText(svg,18,47,subtitleText,{
+    fill:"#9db0c9",
+    fontSize:12,
+    fontWeight:400
+  });
+
   if(baseText){
-    addText(svg,18,71,baseText,"graphicBases",12,"start");
+    addExportSafeText(svg,18,71,baseText,{
+      fill:"#ffd479",
+      fontSize:12,
+      fontWeight:650
+    });
   }
+}
+
+function addExportSafeText(svg,x,y,text,options={}){
+  const e=document.createElementNS("http://www.w3.org/2000/svg","text");
+  e.setAttribute("x",x);
+  e.setAttribute("y",y);
+  e.setAttribute("fill",options.fill || "#eef5ff");
+  e.setAttribute("font-size",options.fontSize || 12);
+  e.setAttribute("font-weight",options.fontWeight || 400);
+  e.setAttribute("font-family",'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif');
+  e.setAttribute("text-anchor","start");
+  e.textContent=text;
+  svg.appendChild(e);
+  return e;
 }
 function baseOverlayText(remarks){
   const text = String(remarks || "");
@@ -656,7 +684,6 @@ function drawOrbital(){
   const svg=$("orbitalSvg");
   clear(svg); addDefs(svg); addRect(svg,0,0,1800,1100,"#000");
   drawStars(svg,1800,1100,hashString(currentSystem.seed+"orbital-stars"));
-  drawGraphicHeader(svg);
   const W=1800,H=1100,cx=900,cy=550;
   const starScale = starDisplayScale(currentSystem.star);
   const starR=Math.max(44,currentSystem.star.radius*.8) * starScale;
@@ -694,6 +721,7 @@ function drawOrbital(){
       });
     }
   });
+  drawGraphicHeader(svg);
 }
 function drawBodyAsset(svg,b,x,y,r){
   const asset=normalizeAsset(b.asset || b.type);
@@ -975,13 +1003,35 @@ function addCircle(svg,x,y,r,fill,cls){ const e=document.createElementNS("http:/
 function addLine(svg,x1,y1,x2,y2,cls){ const e=document.createElementNS("http://www.w3.org/2000/svg","line"); e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2); if(cls)e.setAttribute("class",cls); svg.appendChild(e);return e; }
 function addText(svg,x,y,text,cls,size,anchor){
   const e=document.createElementNS("http://www.w3.org/2000/svg","text");
-  e.setAttribute("x",x); e.setAttribute("y",y);
+  e.setAttribute("x",x);
+  e.setAttribute("y",y);
   if(cls)e.setAttribute("class",cls);
   if(size)e.setAttribute("font-size",size);
   if(anchor)e.setAttribute("text-anchor",anchor);
+  e.setAttribute("font-family",'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif');
+
+  // Inline the key text colors so standalone SVG / PNG export does not fall back to black text.
+  const style = exportSafeTextStyle(cls);
+  e.setAttribute("fill",style.fill);
+  if(style.weight) e.setAttribute("font-weight",style.weight);
+
   e.textContent=text;
   svg.appendChild(e);
   return e;
+}
+
+function exportSafeTextStyle(cls){
+  switch(cls){
+    case "label": return {fill:"#f1f5ff", weight:400};
+    case "smallLabel": return {fill:"#aebbd0", weight:400};
+    case "blueLabel": return {fill:"#5db0ff", weight:400};
+    case "bigLabel": return {fill:"#ffffff", weight:750};
+    case "typeLabel": return {fill:"#d9e4f5", weight:400};
+    case "highportIcon": return {fill:"#d9f0ff", weight:900};
+    case "baseText": return {fill:"#ffd479", weight:400};
+    case "baseIcon": return {fill:"#ffd479", weight:800};
+    default: return {fill:"#eef5ff", weight:400};
+  }
 }
 function addImage(svg,href,x,y,w,h,cls="assetImage"){
   const e=document.createElementNS("http://www.w3.org/2000/svg","image");
@@ -999,20 +1049,113 @@ function drawStars(svg,w,h,seed){
     addCircle(svg,x,y,r,`rgba(255,255,255,${.25+rand()*.65})`);
   }
 }
-function exportCurrentView(mode){
+async function exportCurrentView(mode){
   const source = activeView==="cinematic" ? $("cinematicSvg") : $("orbitalSvg");
-  const clone = source.cloneNode(true);
-  clone.setAttribute("xmlns","http://www.w3.org/2000/svg");
-  const data = new XMLSerializer().serializeToString(clone);
-  const blob = new Blob([data], {type:"image/svg+xml"});
-  const url = URL.createObjectURL(blob);
-  if(mode==="open") window.open(url,"_blank");
-  else{
-    const a=document.createElement("a");
-    a.href=url;
-    a.download=(currentSystem?.world?.name || "system").replace(/\W+/g,"_")+"_"+activeView+".svg";
-    a.click();
+
+  if(mode==="open"){
+    const clone = source.cloneNode(true);
+    clone.setAttribute("xmlns","http://www.w3.org/2000/svg");
+    const data = new XMLSerializer().serializeToString(clone);
+    const blob = new Blob([data], {type:"image/svg+xml"});
+    const url = URL.createObjectURL(blob);
+    window.open(url,"_blank");
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+    return;
   }
+
+  try{
+    const pngBlob = await exportVisibleSvgToPng(source);
+    const pngUrl = URL.createObjectURL(pngBlob);
+    const a=document.createElement("a");
+    a.href=pngUrl;
+    a.download=(currentSystem?.world?.name || "system").replace(/\W+/g,"_")+"_"+activeView+".png";
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(pngUrl), 60000);
+  }catch(err){
+    console.error("PNG export failed:", err);
+    alert("PNG export failed: " + err.message);
+  }
+}
+
+async function exportVisibleSvgToPng(source){
+  const viewBox = source.viewBox.baseVal;
+  const width = viewBox.width || 1600;
+  const height = viewBox.height || 620;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0,0,width,height);
+
+  // 1. Draw vector/text layer by cloning the SVG without image nodes.
+  const vectorClone = source.cloneNode(true);
+  vectorClone.setAttribute("xmlns","http://www.w3.org/2000/svg");
+  vectorClone.setAttribute("width",width);
+  vectorClone.setAttribute("height",height);
+  [...vectorClone.querySelectorAll("image")].forEach(img => img.remove());
+
+  const vectorSvg = new XMLSerializer().serializeToString(vectorClone);
+  const vectorBlob = new Blob([vectorSvg], {type:"image/svg+xml;charset=utf-8"});
+  const vectorUrl = URL.createObjectURL(vectorBlob);
+
+  try{
+    const vectorImg = await loadBitmapFromUrl(vectorUrl);
+    ctx.drawImage(vectorImg,0,0,width,height);
+  }finally{
+    URL.revokeObjectURL(vectorUrl);
+  }
+
+  // 2. Draw the PNG asset layer from fetched blobs, using the same live SVG positions.
+  for(const node of [...source.querySelectorAll("image")]){
+    const href = node.getAttribute("href") || node.href?.baseVal || "";
+    if(!href) continue;
+
+    const bitmap = await fetchBitmapForExport(href);
+    ctx.drawImage(
+      bitmap,
+      exportSvgLength(node,"x"),
+      exportSvgLength(node,"y"),
+      exportSvgLength(node,"width"),
+      exportSvgLength(node,"height")
+    );
+  }
+
+  return await new Promise((resolve,reject)=>{
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Canvas PNG conversion failed")), "image/png");
+  });
+}
+
+function exportSvgLength(node,name){
+  const raw = node.getAttribute(name);
+  const parsed = Number(raw);
+  if(Number.isFinite(parsed)) return parsed;
+  const animated = node[name]?.baseVal?.value;
+  return Number.isFinite(animated) ? animated : 0;
+}
+
+async function fetchBitmapForExport(src){
+  const absolute = new URL(src, window.location.href).href;
+  const response = await fetch(absolute, {cache:"force-cache"});
+  if(!response.ok) throw new Error("Fetch failed " + response.status + " for " + absolute);
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  try{
+    return await loadBitmapFromUrl(objectUrl);
+  }finally{
+    setTimeout(()=>URL.revokeObjectURL(objectUrl), 60000);
+  }
+}
+
+function loadBitmapFromUrl(src){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Could not decode image: " + src));
+    img.src = src;
+  });
 }
 function hashString(str){ let h=2166136261>>>0; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
 function mulberry32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
