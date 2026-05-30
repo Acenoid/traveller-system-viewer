@@ -1055,6 +1055,12 @@ async function exportCurrentView(mode){
   if(mode==="open"){
     const clone = source.cloneNode(true);
     clone.setAttribute("xmlns","http://www.w3.org/2000/svg");
+    clone.querySelectorAll("image").forEach(img => {
+      const href = img.getAttribute("href");
+      if(href && !href.startsWith("data:") && !href.startsWith("http") && !href.startsWith("blob:")) {
+        img.setAttribute("href", new URL(href, window.location.href).href);
+      }
+    });
     const data = new XMLSerializer().serializeToString(clone);
     const blob = new Blob([data], {type:"image/svg+xml"});
     const url = URL.createObjectURL(blob);
