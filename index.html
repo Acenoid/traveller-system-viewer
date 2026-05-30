@@ -104,40 +104,40 @@
     <header>
       <div>
         <h1 id="title">Traveller System Viewer</h1>
-        <div class="sub" id="subtitle">Traveller Map API plus image-based system expansion</div>
+        <div class="sub" id="subtitle">Traveller Map API mit bildbasierter Systemdarstellung</div>
       </div>
       <div class="controls">
-        <button class="smallBtn active" id="showCinematic">Cinematic View</button>
-        <button class="smallBtn" id="showOrbital">Orbital View</button>
-        <button class="smallBtn" id="regenNames">Regenerate Names</button>
-        <button class="smallBtn" id="fitSystem">Fit System</button>
-        <button class="smallBtn" id="exportCurrent">Open Image Tab</button>
-        <button class="smallBtn" id="downloadCurrent">Download PNG</button>
+        <button class="smallBtn active" id="showCinematic">System Karte</button>
+        <button class="smallBtn" id="showOrbital">Sonnensystem</button>
+        <button class="smallBtn" id="regenNames">Namen neu generieren</button>
+        <button class="smallBtn" id="fitSystem">System einpassen</button>
+        <button class="smallBtn" id="exportCurrent">Bild öffnen</button>
+        <button class="smallBtn" id="downloadCurrent">PNG herunterladen</button>
       </div>
     </header>
 
     <div class="loader">
       <div class="field sectorField">
-        <label>Sector</label>
-        <input id="sector" value="Solomani Rim" placeholder="Start typing a sector..." list="sectorList" autocomplete="off">
+        <label>Sektor</label>
+        <input id="sector" value="Solomani Rim" placeholder="Sektor eingeben..." list="sectorList" autocomplete="off">
         <datalist id="sectorList"></datalist>
       </div>
       <div class="field hexField">
         <label>Hex</label>
         <input id="hex" value="0233" placeholder="0233">
       </div>
-      <button id="loadBtn">Load</button>
+      <button id="loadBtn">Laden</button>
       <div class="field seedField">
-        <label>Name Seed</label>
+        <label>Name-Seed</label>
         <input id="nameSeed" value="campaign-alpha-7" placeholder="shared procedural naming seed">
         <div class="muted" style="margin-top:4px">
-          Players using the same seed will generate identical planet and moon names.
+          Spieler mit demselben Seed erhalten identische Planeten- und Mondnamen.
         </div>
       </div>
       <div class="seedButtons">
-        <button id="applySeed">Apply Seed</button>
+        <button id="applySeed">Seed anwenden</button>
       </div>
-      <div id="status" class="muted loaderStatus">Example: Solomani Rim / 0233 for Jardin.</div>
+      <div id="status" class="muted loaderStatus">Beispiel: Solomani Rim / 0233 für Jardin.</div>
     </div>
 
     <div class="main">
@@ -148,7 +148,7 @@
         </div>
 
         <div class="panel" id="orbitalPanel" style="margin-top:10px;display:none">
-          <div class="panelTitle">Orbital View</div>
+          <div class="panelTitle">Orbitale Ansicht</div>
           <div class="orbitalWrap">
             <div class="orbitTools">
               <h3>Zoom</h3>
@@ -157,12 +157,12 @@
                 <input type="range" id="zoomRange" min="0.55" max="4" step="0.05" value="1">
                 <button class="smallBtn" id="zoomIn">+</button>
               </div>
-              <div class="muted"><span id="zoomVal">1.0x</span>. Higher zoom spreads the inner system out. Use Fit System to reset.</div>
-              <h3 style="margin-top:20px">Show</h3>
-              <label class="check"><input id="showLabels" type="checkbox" checked> Labels</label>
-              <label class="check"><input id="showMoons" type="checkbox" checked> Moons</label>
-              <label class="check"><input id="showOrbits" type="checkbox" checked> Orbits</label>
-              <label class="check"><input id="showBelts" type="checkbox" checked> Belts</label>
+              <div class="muted"><span id="zoomVal">1.0x</span>. Höherer Zoom vergrößert den inneren Systembereich. System einpassen zum Zurücksetzen.</div>
+              <h3 style="margin-top:20px">Anzeigen</h3>
+              <label class="check"><input id="showLabels" type="checkbox" checked> Beschriftungen</label>
+              <label class="check"><input id="showMoons" type="checkbox" checked> Monde</label>
+              <label class="check"><input id="showOrbits" type="checkbox" checked> Umlaufbahnen</label>
+              <label class="check"><input id="showBelts" type="checkbox" checked> Gürtel</label>
             </div>
             <div class="orbitalCanvas"><svg id="orbitalSvg" viewBox="0 0 1800 1100"></svg></div>
           </div>
@@ -171,18 +171,18 @@
 
       <div class="side">
         <div class="panel">
-          <h2>World Summary</h2>
+          <h2>Weltzusammenfassung</h2>
           <dl id="summary"></dl>
-          <a id="mapLink" class="mapLink" href="#" target="_blank" rel="noopener">View on Traveller Map</a>
+          <a id="mapLink" class="mapLink" href="#" target="_blank" rel="noopener">Auf der Traveller Map anzeigen</a>
         </div>
 
         <div class="panel">
-          <h2>UWP Translation</h2>
+          <h2>UWP-Übersetzung</h2>
           <div id="uwpTranslation"></div>
         </div>
 
         <details class="panel">
-          <summary style="cursor:pointer;font-weight:750;color:#4da3ff;padding:14px">Generated Data</summary>
+          <summary style="cursor:pointer;font-weight:750;color:#4da3ff;padding:14px">Generierte Daten</summary>
           <pre id="jsonOut">{}</pre>
         </details>
       </div>
@@ -192,8 +192,8 @@
 
 <script>
 const API = "https://travellermap.com";
-const PLANET_ASSET_PATH = "https://avorial.github.io/traveller-system-viewer/planet/";
-const STAR_ASSET_PATH = "https://avorial.github.io/traveller-system-viewer/stars/";
+const PLANET_ASSET_PATH = "planet/";
+const STAR_ASSET_PATH = "stars/";
 
 const PLANET_FILES = {
   ammonia: "ammonia.png",
@@ -323,17 +323,17 @@ async function loadSectorList(){
 }
 
 async function fetchWorldBySectorHex(sector,hex){
-  if(!sector||!/^\d{4}$/.test(hex)){ status("Need a sector and four-digit hex."); return; }
-  status("Loading "+sector+" "+hex+"...");
+  if(!sector||!/^\d{4}$/.test(hex)){ status("Bitte Sektor und vierstelligen Hex angeben."); return; }
+  status("Lade "+sector+" "+hex+"...");
   try{
     const data = await apiJson(`${API}/api/jumpworlds?sector=${encodeURIComponent(sector)}&hex=${encodeURIComponent(hex)}&jump=0`);
     const worlds = normalizeWorlds(data);
     const world = worlds.find(w => String(w.Hex||w.hex||"")===hex) || worlds[0];
-    if(!world){ status("No world returned. Example: Jardin is Solomani Rim / 0233."); return; }
+    if(!world){ status("Keine Welt gefunden. Beispiel: Jardin ist Solomani Rim / 0233."); return; }
     world.Sector = extractSector(world) || sector;
     world.Hex = extractHex(world) || hex;
     currentSystem = generateSystem(world);
-    status("Loaded "+(world.Name||world.name||sector+" "+hex)+".");
+    status("Geladen: "+(world.Name||world.name||sector+" "+hex)+".");
     renderAll();
   }catch(err){ status(err.message); }
 }
@@ -637,8 +637,8 @@ function addExportSafeText(svg,x,y,text,options={}){
 function baseOverlayText(remarks){
   const text = String(remarks || "");
   const bases = [];
-  if(/\bNaval Base\b/i.test(text) || /\bN\b/.test(text)) bases.push("★ Naval Base");
-  if(/\bMilitary Base\b/i.test(text) || /\bM\b/.test(text)) bases.push("✦ Military Base");
+  if(/\bNaval Base\b/i.test(text) || /\bN\b/.test(text)) bases.push("★ Marinebasis");
+  if(/\bMilitary Base\b/i.test(text) || /\bM\b/.test(text)) bases.push("✦ Militärbasis");
   return bases.join(" — ");
 }
 function drawCinematic(){
@@ -767,14 +767,14 @@ function renderUwpTranslation(){
   const p = parsePBG(w.pbg);
 
   const rows = [
-    ["Starport", `${u.starport || "?"} — ${translateStarport(u.starport)}`],
-    ["Size", `${toTravellerDigit(u.size)} — ${translateSize(u.size)}`],
-    ["Atmosphere", `${toTravellerDigit(u.atm)} — ${translateAtmosphere(u.atm)}`],
-    ["Hydrographics", `${toTravellerDigit(u.hydro)} — ${translateHydrographics(u.hydro)}`],
-    ["Population", `${toTravellerDigit(u.pop)} — ${translatePopulation(u.pop)}`],
-    ["Government", `${toTravellerDigit(u.gov)} — ${translateGovernment(u.gov)}`],
-    ["Law Level", `${toTravellerDigit(u.law)} — ${translateLaw(u.law)}`],
-    ["Tech Level", `${toTravellerDigit(u.tl)} — ${translateTech(u.tl)}`]
+    ["Raumhafen", `${u.starport || "?"} — ${translateStarport(u.starport)}`],
+    ["Größe", `${toTravellerDigit(u.size)} — ${translateSize(u.size)}`],
+    ["Atmosphäre", `${toTravellerDigit(u.atm)} — ${translateAtmosphere(u.atm)}`],
+    ["Hydrographie", `${toTravellerDigit(u.hydro)} — ${translateHydrographics(u.hydro)}`],
+    ["Bevölkerung", `${toTravellerDigit(u.pop)} — ${translatePopulation(u.pop)}`],
+    ["Regierung", `${toTravellerDigit(u.gov)} — ${translateGovernment(u.gov)}`],
+    ["Gesetzesstufe", `${toTravellerDigit(u.law)} — ${translateLaw(u.law)}`],
+    ["Technologiestufe", `${toTravellerDigit(u.tl)} — ${translateTech(u.tl)}`]
   ];
 
   if(Number.isFinite(p.populationMultiplier) || Number.isFinite(p.belts) || Number.isFinite(p.gasGiants)){
@@ -791,63 +791,63 @@ function toTravellerDigit(n){
 
 function translateStarport(v){
   return ({
-    A:"Excellent starport",
-    B:"Good starport",
-    C:"Routine starport",
-    D:"Poor starport",
-    E:"Frontier landing area",
-    X:"No starport"
-  })[String(v || "").toUpperCase()] || "Unknown starport";
+    A:"Ausgezeichneter Raumhafen",
+    B:"Guter Raumhafen",
+    C:"Normaler Raumhafen",
+    D:"Schlechter Raumhafen",
+    E:"Frontier-Landeplatz",
+    X:"Kein Raumhafen"
+  })[String(v || "").toUpperCase()] || "Unbekannter Raumhafen";
 }
 
 function translateSize(n){
-  if(!Number.isFinite(n)) return "Unknown size";
-  if(n === 0) return "Asteroid belt or tiny body";
+  if(!Number.isFinite(n)) return "Unbekannte Größe";
+  if(n === 0) return "Asteroidengürtel oder Kleinkörper";
   const km = n * 1600;
-  return `world diameter about ${km.toLocaleString()} km`;
+  return `Weltdurchmesser ca. ${km.toLocaleString()} km`;
 }
 
 function translateAtmosphere(n){
   const map = {
-    0:"None",
-    1:"Trace",
-    2:"Very thin, tainted",
-    3:"Very thin",
-    4:"Thin, tainted",
-    5:"Thin",
+    0:"Keine",
+    1:"Spurenelemente",
+    2:"Sehr dünn, verseucht",
+    3:"Sehr dünn",
+    4:"Dünn, verseucht",
+    5:"Dünn",
     6:"Standard",
-    7:"Standard, tainted",
-    8:"Dense",
-    9:"Dense, tainted",
-    10:"Exotic",
-    11:"Corrosive",
-    12:"Insidious",
-    13:"Dense, high",
-    14:"Thin, low",
-    15:"Unusual"
+    7:"Standard, verseucht",
+    8:"Dicht",
+    9:"Dicht, verseucht",
+    10:"Exotisch",
+    11:"Korrosiv",
+    12:"Tückisch",
+    13:"Dicht, hochgelegen",
+    14:"Dünn, tiefgelegen",
+    15:"Ungewöhnlich"
   };
-  return map[n] || "Unknown atmosphere";
+  return map[n] || "Unbekannte Atmosphäre";
 }
 
 function translateHydrographics(n){
-  if(!Number.isFinite(n)) return "Unknown water coverage";
-  if(n === 0) return "No standing water";
-  if(n === 10) return "Almost entirely water";
-  return `about ${n * 10}% surface water`;
+  if(!Number.isFinite(n)) return "Unbekannte Wasserbedeckung";
+  if(n === 0) return "Kein stehendes Wasser";
+  if(n === 10) return "Fast vollständig bedeckt";
+  return `ca. ${n * 10}% Wasserbedeckung`;
 }
 
 function translatePopulation(n){
-  if(!Number.isFinite(n)) return "Unknown population";
-  if(n === 0) return "Uninhabited";
+  if(!Number.isFinite(n)) return "Unbekannte Bevölkerung";
+  if(n === 0) return "Unbewohnt";
   const low = 10 ** n;
   const high = (10 ** (n + 1)) - 1;
-  return `${formatPopulation(low)} to ${formatPopulation(high)} inhabitants`;
+  return `${formatPopulation(low)} bis ${formatPopulation(high)} Einwohner`;
 }
 
 function formatPopulation(n){
-  if(n >= 1_000_000_000) return `${trimNumber(n / 1_000_000_000)} billion`;
-  if(n >= 1_000_000) return `${trimNumber(n / 1_000_000)} million`;
-  if(n >= 1_000) return `${trimNumber(n / 1_000)} thousand`;
+  if(n >= 1_000_000_000) return `${trimNumber(n / 1_000_000_000)} Milliarden`;
+  if(n >= 1_000_000) return `${trimNumber(n / 1_000_000)} Millionen`;
+  if(n >= 1_000) return `${trimNumber(n / 1_000)} Tausend`;
   return n.toLocaleString();
 }
 
@@ -857,74 +857,74 @@ function trimNumber(n){
 
 function translateGovernment(n){
   const map = {
-    0:"No government structure",
-    1:"Company or corporate control",
-    2:"Participating democracy",
-    3:"Self-perpetuating oligarchy",
-    4:"Representative democracy",
-    5:"Feudal technocracy",
-    6:"Captive government",
-    7:"Balkanized",
-    8:"Civil service bureaucracy",
-    9:"Impersonal bureaucracy",
-    10:"Charismatic dictator",
-    11:"Non-charismatic leader",
-    12:"Charismatic oligarchy",
-    13:"Religious dictatorship",
-    14:"Religious autocracy",
-    15:"Totalitarian oligarchy"
+    0:"Keine Regierungsstruktur",
+    1:"Unternehmenskontrolle",
+    2:"Partizipative Demokratie",
+    3:"Selbsterhaltende Oligarchie",
+    4:"Repräsentative Demokratie",
+    5:"Feudale Technokratie",
+    6:"Abhängige Regierung",
+    7:"Balkanisiert",
+    8:"Zivilbürokratie",
+    9:"Unpersönliche Bürokratie",
+    10:"Charismatischer Diktator",
+    11:"Nicht-charismatischer Führer",
+    12:"Charismatische Oligarchie",
+    13:"Religiöse Diktatur",
+    14:"Religiöse Autokratie",
+    15:"Totalitäre Oligarchie"
   };
-  return map[n] || "Unusual government";
+  return map[n] || "Ungewöhnliche Regierung";
 }
 
 function translateLaw(n){
   const map = {
-    0:"No prohibitions",
-    1:"Light controls",
-    2:"Low restrictions",
-    3:"Moderate weapon restrictions",
-    4:"Most personal weapons restricted",
-    5:"Heavy weapon restrictions",
-    6:"Broad firearm restrictions",
-    7:"Tight personal freedoms",
-    8:"Very restrictive",
-    9:"Extreme controls",
-    10:"Near-total control"
+    0:"Keine Verbote",
+    1:"Leichte Kontrollen",
+    2:"Geringe Einschränkungen",
+    3:"Moderate Waffenbeschränkungen",
+    4:"Meiste Handwaffen verboten",
+    5:"Starke Waffenbeschränkungen",
+    6:"Weitreichende Schusswaffenverbote",
+    7:"Stark eingeschränkte Freiheiten",
+    8:"Sehr restriktiv",
+    9:"Extreme Kontrollen",
+    10:"Nahezu totale Kontrolle"
   };
-  return map[n] || "Severe or unusual controls";
+  return map[n] || "Strenge oder ungewöhnliche Kontrollen";
 }
 
 function translateTech(n){
-  if(!Number.isFinite(n)) return "Unknown technology";
-  if(n <= 3) return "Pre-industrial";
-  if(n <= 5) return "Industrial";
-  if(n <= 7) return "Early modern";
-  if(n <= 9) return "Early stellar";
-  if(n <= 11) return "Interstellar baseline";
-  if(n <= 13) return "Advanced interstellar";
-  return "Very high technology";
+  if(!Number.isFinite(n)) return "Unbekannte Technologie";
+  if(n <= 3) return "Vorindustriell";
+  if(n <= 5) return "Industriell";
+  if(n <= 7) return "Frühe Neuzeit";
+  if(n <= 9) return "Frühe Raumfahrt";
+  if(n <= 11) return "Interstellarer Standard";
+  if(n <= 13) return "Fortgeschrittene Raumfahrt";
+  return "Sehr hohe Technologie";
 }
 
 function translatePbg(p){
   const parts = [];
-  if(Number.isFinite(p.populationMultiplier)) parts.push(`population multiplier ${p.populationMultiplier}`);
-  if(Number.isFinite(p.belts)) parts.push(`${p.belts} planetoid belt${p.belts === 1 ? "" : "s"}`);
-  if(Number.isFinite(p.gasGiants)) parts.push(`${p.gasGiants} gas giant${p.gasGiants === 1 ? "" : "s"}`);
+  if(Number.isFinite(p.populationMultiplier)) parts.push(`Bevölkerungsmultiplikator ${p.populationMultiplier}`);
+  if(Number.isFinite(p.belts)) parts.push(`${p.belts} Planetoidengürtel`);
+  if(Number.isFinite(p.gasGiants)) parts.push(`${p.gasGiants} Gasriese${p.gasGiants === 1 ? "n" : "n"}`);
   return parts.join(", ");
 }
 
 function renderStats(){
   const s=currentSystem,w=s.world,u=parseUWP(w.uwp);
   const rows=[
-    ["Starport",u.starport||"?"],
-    ["Size",u.size],
-    ["Atmosphere",u.atm],
+    ["Raumhafen",u.starport||"?"],
+    ["Größe",u.size],
+    ["Atmosphäre",u.atm],
     ["Hydro",u.hydro],
-    ["Population",u.pop],
-    ["Tech",u.tl],
-    ["Gas Giants",s.counts.gasGiants],
-    ["Belts",s.counts.planetoidBelts],
-    ["Bodies",s.counts.generatedBodies]
+    ["Bevölkerung",u.pop],
+    ["Technologie",u.tl],
+    ["Gasriesen",s.counts.gasGiants],
+    ["Gürtel",s.counts.planetoidBelts],
+    ["Körper",s.counts.generatedBodies]
   ];
   $("stats").innerHTML=rows.map(([k,v])=>`<div class="stat"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join("");
 }
@@ -932,12 +932,12 @@ function renderSummary(){
   const s=currentSystem,w=s.world,u=parseUWP(w.uwp),main=findMainworld(s);
   $("summary").innerHTML=[
     ["Name",w.name],
-    ["Location",`${w.sector} ${w.hex}`],
-    ["UWP",w.uwp || "Unknown"],
-    ["Mainworld Type",main ? labelForAsset(main.asset || main.type) : "Unknown"],
-    ["Remarks",w.remarks || "None"],
-    ["Stellar",w.stellar],
-    ["Generated Bodies",s.counts.generatedBodies]
+    ["Standort",`${w.sector} ${w.hex}`],
+    ["UWP",w.uwp || "Unbekannt"],
+    ["Welttyp",main ? labelForAsset(main.asset || main.type) : "Unbekannt"],
+    ["Anmerkungen",w.remarks || "Keine"],
+    ["Sternsystem",w.stellar],
+    ["Generierte Körper",s.counts.generatedBodies]
   ].map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
   $("mapLink").href = `${API}/go/${encodeURIComponent(w.sector)}/${encodeURIComponent(w.hex)}`;
 }
