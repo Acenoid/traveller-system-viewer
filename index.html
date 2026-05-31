@@ -587,8 +587,9 @@ function hasHighport(system){
   return u.starport === "A" || u.starport === "B";
 }
 function drawHighport(svg,x,y,r){
-  const hx = x + r + 18;
-  const hy = y - r - 12;
+  const offset = r + 10;
+  const hx = x + offset * 0.75;
+  const hy = y - offset * 0.75;
   const size = 15;
   addImage(svg,PLANET_ASSET_PATH + "highport.png",hx-size/2,hy-size/2,size,size,"assetImage");
 }
@@ -694,12 +695,13 @@ function drawOrbital(){
   const scale=(420/maxOrbit)*zoom;
   currentSystem.bodies.forEach((b,idx)=>{
     if(b.type==="belt" && !opts.belts) return;
-    const orbitR=(b.orbit||.1)*scale + 55;
+    const orbitR=(b.orbit||.1)*scale + 80;
     if(opts.orbits) addCircle(svg,cx,cy,orbitR,"none","orbit");
     const angle=(hashString(currentSystem.seed+b.name)%360)*Math.PI/180;
     const x=cx+Math.cos(angle)*orbitR;
     const y=cy+Math.sin(angle)*orbitR*.62;
-    const r=b.type==="gas giant"?36:b.type==="belt"?23:b.isMainworld?31:Math.max(18,b.size+12);
+    const planetScale=zoom>=1.5 ? 1.0 : 0.25 + (zoom-0.55)*(0.75/0.95);
+    const r=Math.round((b.type==="gas giant"?36:b.type==="belt"?23:b.isMainworld?31:Math.max(18,b.size+12))*planetScale);
     drawBodyAsset(svg,b,x,y,r);
     if(b.isMainworld){
       addCircle(svg,x,y,r+4,"none","mainHalo");
