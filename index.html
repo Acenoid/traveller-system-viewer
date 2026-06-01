@@ -609,21 +609,24 @@ function drawGraphicHeader(svg){
   const baseText = baseOverlayText(w.remarks || "");
   const zone = getZone(currentSystem);
 
-  addExportSafeText(svg,18,24,titleText,{
+  const tx = 28;
+  const ty = 24;
+
+  addExportSafeText(svg,tx,ty,titleText,{
     fill:"#eef5ff",
     fontSize:18,
     fontWeight:750
   });
 
-  addExportSafeText(svg,18,47,subtitleText,{
+  addExportSafeText(svg,tx,ty+23,subtitleText,{
     fill:"#9db0c9",
     fontSize:12,
     fontWeight:400
   });
 
-  let headerY = 71;
+  let headerY = ty+47;
   if(zone.color){
-    addExportSafeText(svg,18,headerY,zone.label,{
+    addExportSafeText(svg,tx,headerY,zone.label,{
       fill:zone.color,
       fontSize:12,
       fontWeight:700
@@ -631,7 +634,7 @@ function drawGraphicHeader(svg){
     headerY += 20;
   }
   if(baseText){
-    addExportSafeText(svg,18,headerY,baseText,{
+    addExportSafeText(svg,tx,headerY,baseText,{
       fill:"#ffd479",
       fontSize:12,
       fontWeight:650
@@ -670,8 +673,8 @@ function drawCinematic(){
   const svg=$("cinematicSvg");
   clear(svg); addDefs(svg); addRect(svg,0,0,1600,620,"#000");
   drawStars(svg,1600,620,hashString(currentSystem.seed+"stars"));
-  drawGraphicHeader(svg);
   const zone=getZone(currentSystem);
+  drawGraphicHeader(svg);
   drawStarAsset(svg,155,210,currentSystem.star,150 * starDisplayScale(currentSystem.star));
   addText(svg,155,315,starName(currentSystem.star),"bigLabel",24,"middle");
   addText(svg,155,342,currentSystem.star.raw,"smallLabel",12,"middle");
