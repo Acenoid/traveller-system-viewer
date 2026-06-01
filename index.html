@@ -588,6 +588,17 @@ function applyZoneBorderToPanel(){
   $("cinematicSvg").style.border = svgBorder;
   $("orbitalSvg").style.border = svgBorder;
 }
+function drawZoneBorder(svg, w, h){
+  const zone = getZone(currentSystem);
+  if(!zone.color) return;
+  const e = document.createElementNS("http://www.w3.org/2000/svg","rect");
+  e.setAttribute("x","1"); e.setAttribute("y","1");
+  e.setAttribute("width", w-2); e.setAttribute("height", h-2);
+  e.setAttribute("fill","none");
+  e.setAttribute("stroke", zone.color);
+  e.setAttribute("stroke-width","4");
+  svg.appendChild(e);
+}
 
 function hasHighport(system){
   const u = parseUWP(system.world.uwp);
@@ -1091,6 +1102,7 @@ async function exportCurrentView(mode){
   if(mode==="open"){
     const clone = source.cloneNode(true);
     clone.setAttribute("xmlns","http://www.w3.org/2000/svg");
+    clone.style.background = "#000";
     clone.querySelectorAll("image").forEach(img => {
       const href = img.getAttribute("href");
       if(href && !href.startsWith("data:") && !href.startsWith("http") && !href.startsWith("blob:")) {
