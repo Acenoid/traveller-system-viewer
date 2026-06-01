@@ -148,7 +148,7 @@
         </div>
 
         <div class="panel" id="orbitalPanel" style="margin-top:10px;display:none">
-          <div class="panelTitle">Orbitale Ansicht</div>
+          <div class="panelTitle">Sonnensystem</div>
           <div class="orbitalWrap">
             <div class="orbitTools">
               <h3>Zoom</h3>
@@ -712,13 +712,13 @@ function drawOrbital(){
       addText(svg,x,y+r+31,labelForAsset(b.asset || b.type),"smallLabel",10,"middle");
     }
     if(opts.moons && b.moons && b.moons.length){
-      const moonBase=r+18;
+      const moonBase=r+18*planetScale;
       b.moons.forEach((m,mi)=>{
         const ma=(mi/b.moons.length)*Math.PI*2+.5;
-        const mx=x+Math.cos(ma)*(moonBase+mi*3);
-        const my=y+Math.sin(ma)*(moonBase+mi*3)*.72;
+        const mx=x+Math.cos(ma)*(moonBase+mi*3*planetScale);
+        const my=y+Math.sin(ma)*(moonBase+mi*3*planetScale)*.72;
         addLine(svg,x,y,mx,my,"moonLine");
-        drawBodyAsset(svg,m,mx,my,m.isMainworld?15:9);
+        drawBodyAsset(svg,m,mx,my,Math.round((m.isMainworld?15:9)*planetScale));
         if(opts.labels && m.isMainworld) addText(svg,mx,my+25,m.name,"smallLabel",10,"middle");
       });
     }
