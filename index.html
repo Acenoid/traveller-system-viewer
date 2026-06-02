@@ -1040,7 +1040,17 @@ function starName(star){ return `${star.spectralClass}${star.subtype} ${star.lum
 function addDefs(svg){
   const defs=document.createElementNS("http://www.w3.org/2000/svg","defs");
   const style=document.createElementNS("http://www.w3.org/2000/svg","style");
-  style.textContent=`.mainHalo{fill:none;stroke:#e8f4ff;stroke-width:2.2;filter:drop-shadow(0 0 8px #61b7ff)}.assetImage{image-rendering:auto}`;
+  style.textContent=`
+    .mainHalo{fill:none;stroke:#e8f4ff;stroke-width:2.2;filter:drop-shadow(0 0 8px #61b7ff)}
+    .assetImage{image-rendering:auto}
+    .orbit{fill:none;stroke:#24507f;stroke-width:1;stroke-dasharray:5 6;opacity:.85}
+    .orbitSolid{fill:none;stroke:#2869aa;stroke-width:1;opacity:.7}
+    .moonLine{stroke:#244768;stroke-width:1.2;fill:none}
+    .label{fill:#f1f5ff;font-size:13px}
+    .smallLabel{fill:#aebbd0;font-size:11px}
+    .bigLabel{fill:white;font-size:24px;font-weight:750}
+    .typeLabel{fill:#d9e4f5;font-size:12px}
+  `;
   defs.appendChild(style);
   svg.appendChild(defs);
 }
