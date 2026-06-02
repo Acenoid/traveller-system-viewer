@@ -980,12 +980,15 @@ function renderSummary(){
   $("summary").innerHTML=[
     ["Name",w.name],
     ["Standort",`${w.sector} ${w.hex}`],
+  ].map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")
+  + zoneHtml
+  + [
     ["UWP",w.uwp || "Unbekannt"],
     ["Welttyp",main ? labelForAsset(main.asset || main.type) : "Unbekannt"],
     ["Anmerkungen",w.remarks || "Keine"],
     ["Sternsystem",w.stellar],
     ["Generierte Körper",s.counts.generatedBodies]
-  ].map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")+zoneHtml;
+  ].map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
   $("mapLink").href = `${API}/go/${encodeURIComponent(w.sector)}/${encodeURIComponent(w.hex)}`;
 }
 function findMainworld(sys){
