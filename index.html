@@ -82,6 +82,7 @@
     .baseIcon{fill:#ffd479;font-size:16px;font-weight:800}
     .baseText{fill:#ffd479;font-size:11px}
     .highportIcon{fill:#d9f0ff;font-size:14px;font-weight:900;filter:drop-shadow(0 0 5px #63b7ff)}
+    .rsLabel{fill:#b8e8d0;font-size:8px}
     .mainHalo{fill:none;stroke:#e8f4ff;stroke-width:2.2;filter:drop-shadow(0 0 8px #61b7ff)}
     .glow{filter:drop-shadow(0 0 8px rgba(100,170,255,.75))}
     .starGlow{filter:none}
@@ -214,6 +215,7 @@ const PLANET_FILES = {
   methane: "methane.png",
   oceanic: "oceanic.png",
   ringed_gas_giant: "ringed_gas_giant.png",
+  research_station: "research_station.png",
   rocky: "rocky.png",
   toxic: "toxic.png",
   urban: "urban.png",
@@ -395,7 +397,7 @@ function generateSystem(world){
   if(isSatellite && sys.bodies.some(b=>b.type==="gas giant")){
     const host=sys.bodies.find(b=>b.type==="gas giant");
     host.moons.unshift(mainworld);
-    mainworld.orbitNote=`Satellite of ${host.name||"gas giant"}`;
+    mainworld.orbitNote=`Satellit von ${host.name||"Gasriese"}`;
   }else{
     const insertAt=Math.min(sys.bodies.length,Math.max(1,Math.floor(sys.bodies.length*.35)));
     sys.bodies.splice(insertAt,0,{...mainworld,orbit:sys.bodies[insertAt]?.orbit?sys.bodies[insertAt].orbit-.04:.65});
@@ -421,13 +423,22 @@ function makeBody(asset,type,orbit,size,rand){
 }
 
 function classifyMainworld(uwp,remarks){
-  if(/\bIn\b/.test(remarks)) return "industrial";
+  // Tier 1 — Soziale Hauptklassifikation
   if(/\bHi\b/.test(remarks) && uwp.pop>=9) return "urban";
+  if(/\bIn\b/.test(remarks)) return "industrial";
+
+  // Tier 2 — Explizite physische Umgebung (Remarks)
+  if(/\bHe\b/.test(remarks)) return "volcanic";
   if(/\bFl\b/.test(remarks)) return "exoit";
-  if(/\bIc\b/.test(remarks)) return "ice";
+  if(/\bIc\b|\bFr\b|\bTu\b|\bCo\b/.test(remarks)) return "ice";
   if(/\bOc\b|\bWa\b/.test(remarks)) return uwp.atm<=3 ? "ice_ocean" : "oceanic";
-  if(/\bAg\b|\bGa\b/.test(remarks)) return "garden";
+  if(/\bGa\b|\bAg\b|\bPa\b|\bFa\b|\bTr\b/.test(remarks)) return "garden";
+  if(/\bHo\b/.test(remarks)) return "volcanic";
+  if(/\bDe\b/.test(remarks)) return "desert";
+  if(/\bVa\b/.test(remarks)) return "vacuum";
   if(/\bBa\b|\bDi\b/.test(remarks)) return uwp.atm<=1 ? "vacuum" : "barren";
+
+  // Tier 3 — UWP Atmosphäre/Hydrosphäre
   if(uwp.atm===0 || uwp.atm===1) return "vacuum";
   if(uwp.atm>=13) return "toxic";
   if(uwp.atm===11 || uwp.atm===12) return "corrosive";
@@ -436,6 +447,14 @@ function classifyMainworld(uwp,remarks){
   if(uwp.hydro<=2 && uwp.atm>=4) return "desert";
   if(uwp.hydro>=9) return "oceanic";
   if(uwp.atm>=4 && uwp.atm<=9 && uwp.hydro>=3 && uwp.hydro<=8) return "garden";
+
+  // Tier 4 — Sekundäre soziale Klassifikationen
+  if(/\bRi\b|\bRe\b/.test(remarks)) return "garden";
+  if(/\bLo\b/.test(remarks)) return "barren";
+  if(/\bNa\b/.test(remarks)) return "desert";
+  if(/\bMi\b|\bNi\b/.test(remarks)) return "rocky";
+  if(/\bTz\b/.test(remarks)) return "corrosive";
+
   return "rocky";
 }
 
@@ -611,6 +630,18 @@ function drawHighport(svg,x,y,r){
   const size = 15;
   addImage(svg,PLANET_ASSET_PATH + "highport.png",hx-size/2,hy-size/2,size,size,"assetImage");
 }
+function hasResearchStation(system){
+  return /\bRs[A-Z]?\b/.test(String(system.world.remarks||""));
+}
+function drawResearchStation(svg,x,y,r,remarks){
+  const offset = r + 10;
+  const rx = x - offset * 0.75;
+  const ry = y - offset * 0.75;
+  const size = 15;
+  addImage(svg,PLANET_ASSET_PATH + "research_station.png",rx-size/2,ry-size/2,size,size,"assetImage");
+  const label = researchStationLabel(remarks);
+  if(label) addText(svg,rx,ry-size/2-4,label,"rsLabel",8,"middle");
+}
 function drawGraphicHeader(svg){
   if(!currentSystem) return;
   const w = currentSystem.world;
@@ -715,6 +746,7 @@ function drawCinematic(){
     if(b.isMainworld) {
       addCircle(svg,x,y,r+5,"none","mainHalo");
       if(hasHighport(currentSystem)) drawHighport(svg,x,y,r);
+      if(hasResearchStation(currentSystem)) drawResearchStation(svg,x,y,r,currentSystem.world.remarks);
     }
     addText(svg,x,y+r+28,b.name,"label",13,"middle");
     addText(svg,x,y+r+45,labelForAsset(b.asset || b.type),"typeLabel",12,"middle");
@@ -746,6 +778,7 @@ function drawOrbital(){
     if(b.isMainworld){
       addCircle(svg,x,y,r+4,"none","mainHalo");
       if(hasHighport(currentSystem)) drawHighport(svg,x,y,r);
+      if(hasResearchStation(currentSystem)) drawResearchStation(svg,x,y,r,currentSystem.world.remarks);
     }
     if(opts.labels){
       addText(svg,x,y+r+17,b.name,"label",12,"middle");
@@ -797,8 +830,72 @@ function normalizeAsset(asset){
   if(a==="exotic") return "exoit";
   return PLANET_FILES[a] ? a : "rocky";
 }
+const PLANET_LABELS_DE = {
+  ammonia:          "Ammoniakwelt",
+  ash:              "Aschewelt",
+  asteroid:         "Asteroid",
+  barren:           "Ödwelt",
+  chthonian:        "Chthonische Welt",
+  corrosive:        "Korrosive Welt",
+  crystal:          "Kristallwelt",
+  desert:           "Wüstenwelt",
+  exoit:            "Exotische Welt",
+  garden:           "Gartenwelt",
+  gas_giant:        "Gasriese",
+  hot_gas_giant:    "Heißer Gasriese",
+  ice:              "Eiswelt",
+  ice_ocean:        "Eis-Ozeanwelt",
+  industrial:       "Industriewelt",
+  methane:          "Methanwelt",
+  oceanic:          "Ozeanwelt",
+  research_station: "Forschungsstation",
+  ringed_gas_giant: "Gasriese mit Ringen",
+  rocky:            "Felsenwelt",
+  toxic:            "Toxische Welt",
+  urban:            "Urbane Welt",
+  vacuum:           "Vakuumwelt",
+  volcanic:         "Vulkanische Welt",
+  "gas giant":      "Gasriese",
+  belt:             "Asteroidengürtel",
+  moon:             "Mond",
+  world:            "Welt",
+};
 function labelForAsset(asset){
-  return normalizeAsset(asset).replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase()).replace("Exoit","Exotic");
+  const key = String(asset||"rocky").toLowerCase().replace(/[\s/-]+/g,"_");
+  return PLANET_LABELS_DE[key] || PLANET_LABELS_DE[String(asset||"").toLowerCase()] || normalizeAsset(asset).replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+}
+
+const RS_SUFFIX_DE = {
+  A: "Alpha",    // 1. Α
+  B: "Beta",     // 2. Β
+  G: "Gamma",    // 3. Γ
+  D: "Delta",    // 4. Δ
+  E: "Epsilon",  // 5. Ε
+  Z: "Zeta",     // 6. Ζ
+  H: "Eta",      // 7. Η
+  T: "Theta",    // 8. Θ
+  I: "Iota",     // 9. Ι
+  K: "Kappa",    // 10. Κ
+  L: "Lambda",   // 11. Λ
+  M: "Mu",       // 12. Μ
+  N: "Nu",       // 13. Ν
+  X: "Xi",       // 14. Ξ
+  O: "Omicron",  // 15. Ο
+  P: "Pi",       // 16. Π
+  R: "Rho",      // 17. Ρ
+  S: "Sigma",    // 18. Σ
+  U: "Upsilon",  // 20. Υ (Tau entfällt, T=Theta)
+  F: "Phi",      // 21. Φ
+  C: "Chi",      // 22. Χ
+  Y: "Psi",      // 23. Ψ
+  W: "Omega",    // 24. Ω
+};
+function researchStationLabel(remarks){
+  const m = String(remarks||"").match(/\bRs([A-Z])?\b/);
+  if(!m) return null;
+  const letter = m[1] || "";
+  const suffix = RS_SUFFIX_DE[letter] || letter;
+  return suffix ? `Forschungsstation ${suffix}` : "Forschungsstation";
 }
 
 function renderUwpTranslation(){
@@ -1053,6 +1150,7 @@ function addDefs(svg){
     .smallLabel{fill:#aebbd0;font-size:11px}
     .bigLabel{fill:white;font-size:24px;font-weight:750}
     .typeLabel{fill:#d9e4f5;font-size:12px}
+    .rsLabel{fill:#b8e8d0;font-size:8px}
   `;
   defs.appendChild(style);
   svg.appendChild(defs);
@@ -1088,6 +1186,7 @@ function exportSafeTextStyle(cls){
     case "bigLabel": return {fill:"#ffffff", weight:750};
     case "typeLabel": return {fill:"#d9e4f5", weight:400};
     case "highportIcon": return {fill:"#d9f0ff", weight:900};
+    case "rsLabel": return {fill:"#b8e8d0", weight:400};
     case "baseText": return {fill:"#ffd479", weight:400};
     case "baseIcon": return {fill:"#ffd479", weight:800};
     default: return {fill:"#eef5ff", weight:400};
